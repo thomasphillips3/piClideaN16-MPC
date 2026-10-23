@@ -1,6 +1,6 @@
 # πClideaN16 MPC
 
-**Version 1.1.2 · Sixteen-lane Euclidean MIDI sequencer for Akai Force**
+**Version 1.1.2 · Sixteen-lane Euclidean MIDI sequencer for Akai MPC OS**
 
 ![πClideaN16 MPC](Cover.JPG)
 
