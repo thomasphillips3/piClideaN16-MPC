@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- Akai Force with community ARMv7 VST2 plugin support and ALSA MIDI routing.
+- Akai MPC Gen1 with community ARMv7 VST2 plugin support and ALSA MIDI routing. (Tested on FORCE)
 - A compatible installer that handles portable plugin ZIPs and MPC plugin registration.
 - For SSD storage, an executable `Synths` mount, configured separately from this plugin.
 
@@ -10,7 +10,7 @@ The package contains regular files, requires no symbolic links and can be stored
 
 ## Install
 
-1. Save the current Force project before allowing an installer to restart MPC.
+1. Save the current project before allowing an installer to restart MPC.
 2. Open the installer's local ZIP installation page.
 3. Select `piClideaN-MPC-1.1.3-armv7.zip` from `Installation/`.
 4. Select **User memory / Synths** or the available **SSD / Synths** destination.

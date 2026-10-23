@@ -1,8 +1,8 @@
-# πClideaN16 MPC
+# πClideaN 16 MPC
 
-**Version 1.1.3 · Sixteen-lane Euclidean MIDI sequencer for Akai Force**
+**Version 1.1.3 · Sixteen-lane Euclidean MIDI sequencer for Akai MPC OS**
 
-![πClideaN16 MPC](Cover.JPG)
+![πClideaN 16 MPC](Cover.JPG)
 
 Build evolving drum patterns with sixteen independent lanes, per-step expression and a native touch interface. Drive a Drum Track or a drum instrument through the plugin's dedicated MIDI output.
 
@@ -20,7 +20,7 @@ Build evolving drum patterns with sixteen independent lanes, per-step expression
 - Eight contextual Q-Link controls and native project state storage.
 - Independent MIDI client, output port and scheduling queue for each instance.
 
-The plugin generates MIDI only. Use a separate Drum Track or drum instrument to produce sound. The plugin appears as **πClideaN MPC** in the instrument list; code, binary and MIDI identifiers use ASCII `pi`.
+The plugin generates MIDI only. Use a separate Drum Track or drum instrument to produce sound. 
 
 ## Download and setup
 
@@ -51,7 +51,7 @@ vst.json            Plugin build configuration
 
 ## Requirements
 
-Akai Force running an OS environment that supports community ARMv7 VST2 plugins and native plugin skins. This is not a stock firmware add-on installer. SSD installation requires executable access to the SSD's `Synths` directory. The package uses regular files and requires no symbolic links.
+Akai Gen1 (Tested on Akai FORCE) running an OS environment that supports community ARMv7 VST2 plugins and native plugin skins. This is not a stock firmware add-on installer. SSD installation requires executable access to the SSD's `Synths` directory. The package uses regular files and requires no symbolic links.
 
 ## License
 
