@@ -20,7 +20,7 @@ Build evolving drum patterns with sixteen independent lanes, per-step expression
 - Eight contextual Q-Link controls and native project state storage.
 - Independent MIDI client, output port and scheduling queue for each instance.
 
-The plugin generates MIDI only. Use a separate Drum Track or drum instrument to produce sound. The plugin appears as **πClideaN MPC** in the instrument list; code, binary and MIDI identifiers use ASCII `pi`.
+The plugin generates MIDI only. Use a separate Drum Track or drum instrument to produce sound. 
 
 ## Download and setup
 
