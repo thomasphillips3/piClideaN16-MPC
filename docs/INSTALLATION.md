@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- Akai Force with community ARMv7 VST2 plugin support and ALSA MIDI routing.
+- Akai Gen1 with community ARMv7 VST2 plugin support and ALSA MIDI routing.
 - A compatible installer that handles portable plugin ZIPs and MPC plugin registration.
 - For SSD storage, an executable `Synths` mount, configured separately from this plugin.
 
