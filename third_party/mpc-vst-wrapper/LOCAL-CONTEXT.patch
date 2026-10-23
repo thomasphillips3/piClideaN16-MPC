@@ -1,0 +1,77 @@
+--- a/wrapper/vst2_wrap.c
++++ b/wrapper/vst2_wrap.c
+@@ -19,6 +19,13 @@
+ #include <math.h>
+ #include <ctype.h>
+ #include <pthread.h>
++/* ARM hard-float baseline: bind existing pre-2.34 pthread ABI symbols. */
++#if defined(__arm__) && defined(__GLIBC__)
++__asm__(".symver pthread_mutexattr_init,pthread_mutexattr_init@GLIBC_2.4");
++__asm__(".symver pthread_mutexattr_destroy,pthread_mutexattr_destroy@GLIBC_2.4");
++__asm__(".symver pthread_mutexattr_settype,pthread_mutexattr_settype@GLIBC_2.4");
++__asm__(".symver pthread_mutexattr_setprotocol,pthread_mutexattr_setprotocol@GLIBC_2.4");
++#endif
+ #include "params.h"
+ #ifndef HAS_LFO_BPM
+ #define HAS_LFO_BPM 0 /* 1: pass the host tempo to the DSP as "lfo_bpm" */
+@@ -70,6 +77,10 @@
+ #endif
+ 
+ #include "engine.h"
++/* PICN_CONTEXT_PATCH_1: cycle bounds and actual sample rate for this port only. */
++#if PICN_HOST_CONTEXT
++extern void picn_engine_context(void *, double, double, int, double);
++#endif
+ #include "popup.h"
+ 
+ #define DSP_BLOCK 128
+@@ -128,6 +139,7 @@
+     int16_t inb[DSP_BLOCK * 2];   /* effect: the host audio being collected for the engine */
+     int inpos;
+     double bpm;
++    double host_sample_rate;
+     volatile int holdFrames[NPARAMS];  /* momentary params: frames left before reporting back to 0 (hold_ms) */
+     volatile char changed[NPARAMS];  /* params the plugin changed itself (step_of on an option), to report */
+     float last_pos[NPARAMS]; /* stepped params: the last position the host asked for, in steps (-1 = none yet) */
+@@ -400,12 +412,19 @@
+ 
+ static void update_tempo(wrap_t *w, int32_t n) {
+     VstTimeInfo *ti = (VstTimeInfo *)w->master(&w->fx, audioMasterGetTime, 0,
+-                                              kVstTempoValid | ((HAS_TRANSPORT || HAS_SONG_POS) ? kVstPpqPosValid : 0), 0, 0);
+-    if (!ti) return;
++                                              kVstTempoValid | ((HAS_TRANSPORT || HAS_SONG_POS) ? (kVstPpqPosValid | (1 << 12)) : 0), 0, 0);
++    if (!ti) { if (HAS_SONG_POS) eng_song_pos(w, -1.0, 0.0, 0, n); return; }
+     if (HAS_TRANSPORT) update_transport(w, ti);
+     if (HAS_SONG_POS) {   /* ppq < 0 tells the engine the host gave no position */
+         int ok = (ti->flags & kVstPpqPosValid) && (ti->flags & kVstTempoValid) && ti->tempo > 0;
++#if PICN_HOST_CONTEXT
++        pthread_mutex_lock(&w->lock);
++        picn_engine_context(w->dsp, ti->cycleStartPos, ti->cycleEndPos, ti->flags, w->host_sample_rate);
++        g_api->song_pos(w->dsp, ok ? ti->ppqPos : -1.0, ok ? ti->tempo : 0.0, (ti->flags & kVstTransportPlaying) != 0, n);
++        pthread_mutex_unlock(&w->lock);
++#else
+         eng_song_pos(w, ok ? ti->ppqPos : -1.0, ok ? ti->tempo : 0.0, (ti->flags & kVstTransportPlaying) != 0, n);
++#endif
+     }
+     if (!HAS_LFO_BPM || !(ti->flags & kVstTempoValid) || ti->tempo <= 0) return;
+     if (fabs(ti->tempo - w->bpm) > 0.01) {
+@@ -728,7 +747,7 @@
+     case effGetVendorString: copy_str(p, PLUG_VENDOR, 32); return 1;
+     case effGetVendorVersion: return PLUG_VERSION;
+     case effGetVstVersion: return 2400;
+-    case effCanBeAutomated: return idx >= 0 && idx < NPARAMS;
++    case effCanBeAutomated: return idx >= 0 && idx < NPARAMS && PICN_AUTOMATABLE[idx]; /* Port: canonical lane parameters only; contextual views are not recorded. */
+     case effGetParamName:
+         if (idx >= 0 && idx < NPARAMS) {
+             char buf[64], k2[96];
+@@ -760,7 +779,9 @@
+         }
+         return 1;
+     }
+-    case effSetSampleRate: case effSetBlockSize: case effMainsChanged: return 1;
++    case effSetSampleRate: if (isfinite(o) && o >= 8000 && o <= 192000) w->host_sample_rate = o; return 1;
++    case effSetBlockSize: return 1;
++    case effMainsChanged: if (!v && HAS_SONG_POS) eng_song_pos(w, -1.0, 0.0, 0, 0); return 1;
+     case effProcessEvents: {
+         VstEvents *ev = p;
+ #if SAMPLE_ACCURATE

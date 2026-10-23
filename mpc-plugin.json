@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "id": "piclidean-mpc",
+  "name": "πClideaN MPC",
+  "version": "1.1.2",
+  "distribution_revision": "release",
+  "uid": "5069434e",
+  "manufacturer": "Timo",
+  "so": "piclidean_mpc.so",
+  "skin": "Timo - VST - πClideaN MPC",
+  "folder": "portable/Timo - VST - πClideaN MPC",
+  "arch": "armv7",
+  "kind": "instrument",
+  "layout": "portable",
+  "extras": [],
+  "user_data": [],
+  "requires": ""
+}

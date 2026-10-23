@@ -1,0 +1,113 @@
+{
+  "source": "Debian bookworm/main indexes; SHA256 checked before extraction",
+  "packages": [
+    {
+      "Package": "binutils-arm-linux-gnueabihf",
+      "Version": "2.40-2",
+      "Filename": "pool/main/b/binutils/binutils-arm-linux-gnueabihf_2.40-2_amd64.deb",
+      "SHA256": "7ae66e614dc4ca896523641b66c643a8b157ab5ef7cddc658d5e16e76944643c"
+    },
+    {
+      "Package": "binutils-common",
+      "Version": "2.40-2",
+      "Filename": "pool/main/b/binutils/binutils-common_2.40-2_amd64.deb",
+      "SHA256": "ab314134f43a0891a48f69a9bc33d825da748fa5e0ba2bebb7a5c491b026f1a0"
+    },
+    {
+      "Package": "libbinutils",
+      "Version": "2.40-2",
+      "Filename": "pool/main/b/binutils/libbinutils_2.40-2_amd64.deb",
+      "SHA256": "fcf55b99e5f8a78f3c8ce9b6957f1024f394cf20c196b100d308a57e43547710"
+    },
+    {
+      "Package": "libctf-nobfd0",
+      "Version": "2.40-2",
+      "Filename": "pool/main/b/binutils/libctf-nobfd0_2.40-2_amd64.deb",
+      "SHA256": "ef1dfcf22de41ea90ebd3d505447ccccd999e96b85aa777a1d7d981dc3b347aa"
+    },
+    {
+      "Package": "libctf0",
+      "Version": "2.40-2",
+      "Filename": "pool/main/b/binutils/libctf0_2.40-2_amd64.deb",
+      "SHA256": "3fb7b6f326be3fae4a87a3d33b9269bd06c1e4346a24bd737f265067e3b7427f"
+    },
+    {
+      "Package": "libc6-armhf-cross",
+      "Version": "2.36-8cross1",
+      "Filename": "pool/main/c/cross-toolchain-base/libc6-armhf-cross_2.36-8cross1_all.deb",
+      "SHA256": "bd4c250aef23a6145ad2749f7a54e0dca1c13bd520a34a8b3ba831284da93dc3"
+    },
+    {
+      "Package": "libc6-dev-armhf-cross",
+      "Version": "2.36-8cross1",
+      "Filename": "pool/main/c/cross-toolchain-base/libc6-dev-armhf-cross_2.36-8cross1_all.deb",
+      "SHA256": "e15fbc0c42bc12ef4fc809aac3780cf5fb455c40691a0ad1fbb591d49898d8dc"
+    },
+    {
+      "Package": "linux-libc-dev-armhf-cross",
+      "Version": "6.1.4-1cross1",
+      "Filename": "pool/main/c/cross-toolchain-base/linux-libc-dev-armhf-cross_6.1.4-1cross1_all.deb",
+      "SHA256": "f3c313d843558fea7e3ebe3768607c14c17d769f8954580a9d829c8de18827a1"
+    },
+    {
+      "Package": "cpp-12-arm-linux-gnueabihf",
+      "Version": "12.2.0-14cross1",
+      "Filename": "pool/main/g/gcc-12-cross/cpp-12-arm-linux-gnueabihf_12.2.0-14cross1_amd64.deb",
+      "SHA256": "41e6249f08ff9a6e0612c985b8fe5a844242e05f5865219fba83bfc747fbde59"
+    },
+    {
+      "Package": "g++-12-arm-linux-gnueabihf",
+      "Version": "12.2.0-14cross1",
+      "Filename": "pool/main/g/gcc-12-cross/g++-12-arm-linux-gnueabihf_12.2.0-14cross1_amd64.deb",
+      "SHA256": "037dafa22aee437719bf91dd97bca088b0312976dc0a3c98e33f809f41506e71"
+    },
+    {
+      "Package": "gcc-12-arm-linux-gnueabihf",
+      "Version": "12.2.0-14cross1",
+      "Filename": "pool/main/g/gcc-12-cross/gcc-12-arm-linux-gnueabihf_12.2.0-14cross1_amd64.deb",
+      "SHA256": "5232b72a43b08b67f97c23408240db5836c37d7b0d41767f2194c41bca099c7e"
+    },
+    {
+      "Package": "gcc-12-arm-linux-gnueabihf-base",
+      "Version": "12.2.0-14cross1",
+      "Filename": "pool/main/g/gcc-12-cross/gcc-12-arm-linux-gnueabihf-base_12.2.0-14cross1_amd64.deb",
+      "SHA256": "dc4129694d3cbf117760df10502696fe4bc2958b197198af610cd45d06799451"
+    },
+    {
+      "Package": "gcc-12-cross-base",
+      "Version": "12.2.0-14cross1",
+      "Filename": "pool/main/g/gcc-12-cross/gcc-12-cross-base_12.2.0-14cross1_all.deb",
+      "SHA256": "8dcb9dc293df9069f09dbe68d73f4a8ec2d4e3da4dcfbfe14a821d94e257e9d5"
+    },
+    {
+      "Package": "libgcc-12-dev-armhf-cross",
+      "Version": "12.2.0-14cross1",
+      "Filename": "pool/main/g/gcc-12-cross/libgcc-12-dev-armhf-cross_12.2.0-14cross1_all.deb",
+      "SHA256": "55d2d48dc29a7a08c8a9287b0b0214db886dda5ae33a88138cfc782612f3b1a1"
+    },
+    {
+      "Package": "libgcc-s1-armhf-cross",
+      "Version": "12.2.0-14cross1",
+      "Filename": "pool/main/g/gcc-12-cross/libgcc-s1-armhf-cross_12.2.0-14cross1_all.deb",
+      "SHA256": "a8c68921641aaeb29258fd2e1ae2c2a9df4f836936240597eef8b7190000217e"
+    },
+    {
+      "Package": "libstdc++-12-dev-armhf-cross",
+      "Version": "12.2.0-14cross1",
+      "Filename": "pool/main/g/gcc-12-cross/libstdc++-12-dev-armhf-cross_12.2.0-14cross1_all.deb",
+      "SHA256": "2729fedec7d328876c0fb6ec4d68dbef4daf883f7c248e86bd0ec91277b2c683"
+    },
+    {
+      "Package": "libstdc++6-armhf-cross",
+      "Version": "12.2.0-14cross1",
+      "Filename": "pool/main/g/gcc-12-cross/libstdc++6-armhf-cross_12.2.0-14cross1_all.deb",
+      "SHA256": "12ce7b76655b40ccf4664d5e5cc7c4930da9dc82544601b3fcd568d1244059dc"
+    },
+    {
+      "Package": "libasound2",
+      "Version": "1.2.8-1+b1",
+      "Filename": "pool/main/a/alsa-lib/libasound2_1.2.8-1+b1_armhf.deb",
+      "SHA256": "97718ff5e552c9a7b9e77e8debbe219b0068a9ab5dcabedd0800c69dd8f0eb96"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+--- a/wrapper/vst2_wrap.c
++++ b/wrapper/vst2_wrap.c
+@@ -557,14 +557,24 @@
+     if (mpc_engine_changed) {
+         char key[64];
+         pthread_mutex_lock(&w->lock);
+-        for (int k = 0; k < NPARAMS && mpc_engine_changed(w->dsp, key, sizeof key) > 0; k++)
+-            for (int i = 0; i < NPARAMS; i++)
+-                if (!strcmp(PARAMS[i].key, key)) {
+-                    w->last_pos[i] = -1;   /* the host's last position no longer stands (settle()) */
++        /* Port-local sorted lookup: bounded logarithmic lookup for per-step parameters.
++         * Preserve upstream notification semantics and its 50 ms display throttle. */
++        for (int k = 0; k < NPARAMS && mpc_engine_changed(w->dsp, key, sizeof key) > 0; k++) {
++            int lo = 0, hi = NPARAMS;
++            while (lo < hi) {
++                int mid = lo + (hi - lo) / 2;
++                int i = PICN_PARAM_LOOKUP[mid];
++                int cmp = strcmp(PARAMS[i].key, key);
++                if (cmp < 0) lo = mid + 1;
++                else if (cmp > 0) hi = mid;
++                else {
++                    w->last_pos[i] = -1;
+                     w->cc_changed[i] = 1;
+                     if (PARAMS[i].nopts > 1) w->need_update_display = 1;
+                     break;
+                 }
++            }
++        }
+         pthread_mutex_unlock(&w->lock);
+     }
+     if ((w->cc_report -= n) <= 0) {

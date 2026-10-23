@@ -1,0 +1,18 @@
+--- a/wrapper/vst2_wrap.c
++++ b/wrapper/vst2_wrap.c
+@@ -824,12 +824,13 @@
+         return (intptr_t)strlen(w->chunk) + 1;
+     }
+     case effSetChunk: {
+-        if (v <= 0 || (size_t)v > sizeof w->chunk) return 0;
++        if (!p || v <= 0 || (size_t)v > sizeof w->chunk || memchr(p, 0, (size_t)v - 1)) return 0;
+         memcpy(w->chunk, p, v);
+         w->chunk[v - 1] = 0;
+         __atomic_store_n(&w->has_pend0, 0, __ATOMIC_RELEASE);   /* a restore sets parameter 0 too */
+         eng_set(w, "state", w->chunk);
+-        return 1;
++        char accepted[8];
++        return eng_get(w, "state_valid", accepted, sizeof accepted) > 0 && atoi(accepted) == 1;
+     }
+     default: return 0;
+     }

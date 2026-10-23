@@ -1,0 +1,14 @@
+--- wrapper-before-capacity/vst2_wrap.c
++++ wrapper/vst2_wrap.c
+@@ -155,7 +155,10 @@
+     char last_rev[16];       /* HAS_DISPLAY_REV: the "display_rev" last seen */
+     float last_norm[NPARAMS];   /* HAS_DISPLAY_REV: value last reported per param (-1 = never) */
+     float open[NPARAMS];     /* popup "open" flags (popup.h): kept here, never sent to the DSP or saved */
+-    char chunk[8192];
++#ifndef MPC_CHUNK_BYTES
++#define MPC_CHUNK_BYTES 8192
++#endif
++    char chunk[MPC_CHUNK_BYTES];
+     pthread_mutex_t lock;    /* one engine call at a time: see eng_set() */
+     int nrpn;                /* HAS_NRPN: the parameter CC 99/98 selected (-1: none), its coarse value from CC 6 */
+     int nrpn_msb;

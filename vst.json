@@ -1,0 +1,19 @@
+{
+  "name": "\u03c0ClideaN MPC",
+  "vendor": "Timo",
+  "uid": "PiCN",
+  "version": 11200,
+  "so": "piclidean_mpc.so",
+  "params": "params.json",
+  "custom_skin": true,
+  "cc": false,
+  "nrpn": false,
+  "defines": {
+    "HAS_SONG_POS": 1,
+    "HAS_DISPLAY_REV": 0,
+    "DISPLAY_REV_NO_UPDATE": 1,
+    "PARAM_TEXT_MAX": 64,
+    "PICN_HOST_CONTEXT": 1,
+    "MPC_CHUNK_BYTES": 32768
+  }
+}

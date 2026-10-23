@@ -1,0 +1,394 @@
+/* piClideaN MPC -- independent MIDI-only Euclidean engine. Copyright 2026 Timo. MIT. */
+#include "engine.h"
+#include "drum_notes.h"
+#include <alsa/asoundlib.h>
+#include <stdatomic.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+#include <math.h>
+#include <errno.h>
+#include <limits.h>
+#include <time.h>
+#define LANES 16
+#define NF 14
+#define EVENTS 512
+#define EXTRA_PARAMS (14+LANES*4+LANES*32*5+8)
+#define LEGACY_CHANGED (LANES*NF+19)
+#define SELECT16_ID (LEGACY_CHANGED+EXTRA_PARAMS)
+#define HOLD_ID (SELECT16_ID+1)
+#define CHANGED_COUNT (HOLD_ID+LANES)
+#define VIS_LANE 288
+#define VIS_PREVIEW (VIS_LANE+LANES)
+#define VIS_CELL (VIS_PREVIEW+32)
+#define VIS_PHASE (VIS_CELL+32)
+#define VIS_CUSTOM (VIS_PHASE+2)
+#define VIS_POSITION (VIS_CUSTOM+4)
+#define VIS_TRACK (VIS_POSITION+1)
+#define VIS_FLASH (VIS_TRACK+LANES*32)
+#define VISUALS (VIS_FLASH+LANES)
+#define FLASH_EVENTS 64
+#define FLASH_SECONDS 0.140
+static const char *field_names[NF]={"steps","hits","rotate","division","velocity","humanize","prob","gate","inote","dnote","pad","sound","mute","solo"};
+static const int mins[NF]={1,0,0,0,1,0,0,10,0,0,0,0,0,0};
+static const int maxs[NF]={32,32,31,4,127,50,100,95,127,127,15,11,1,1};
+static const char *sounds[]={"KICK","MBRANE","CL HAT","OP HAT","CLAP","RIM","CRASH","RIDE","X1","X2","FM","CUSTOM"};
+static const double step_beats[]={0.125,0.25,0.5,1.,2.};
+static _Atomic unsigned slots;
+typedef struct {int f[NF];uint32_t pattern;int values[32][5];int playmode,auto_rotate,shift,every,hold;unsigned seed;double origin;} Lane;
+typedef struct {int line,source,repeat,velocity;double beat,duration;} Hit;
+typedef struct {double requested;int actual,line,step,view,lo,hi;} QMove;
+typedef struct {
+ Lane lane[LANES];int selected,mode,channel,bank,step,rhythm,dialog,row,panic;
+ int edit_view,edit_tool,state_valid;
+ QMove qmove[8];unsigned q_valid;
+ unsigned revision,random,errors;int slot;
+ snd_seq_t *seq;int port,queue;snd_seq_remove_events_t *rem;
+ int active_note[LANES],active_ch[LANES];
+ double active_off[LANES],queue_now,queue_end,expected_ppq,last_host_ppq;
+ /* Visual-only bounded rings; no influence on note scheduling or errors. */
+ double flash_at[LANES][FLASH_EVENTS],flash_until[LANES];
+ unsigned flash_read[LANES],flash_count[LANES];
+ unsigned release_pending; snd_seq_queue_status_t *queue_status;
+ double sample_rate,cycle_a,cycle_b;int cycle,playing,valid;long head[LANES];double display_tick[LANES],reset_at[LANES];
+ int changed[CHANGED_COUNT],changes,change_read,change_write;unsigned char queued[CHANGED_COUNT];unsigned visual_revision;
+ unsigned char visual_dirty[VISUALS]; int visual_last[VISUALS],visual_ready,visual_frames,visual_cursor;int ui_offset[LANES];
+ double last_changed[CHANGED_COUNT];unsigned char have_changed[CHANGED_COUNT]; /* bounded numeric identifiers, no allocation during callback */
+} Engine;
+static int clampi(int v,int a,int b){return v<a?a:v>b?b:v;}
+static unsigned rng(Engine *e){unsigned x=e->random;x^=x<<13;x^=x>>17;x^=x<<5;return e->random=x?x:0x67419321u;}
+static int integer(const char *s,int *out){char *end;errno=0;double n=strtod(s,&end);if(errno||end==s||*end||!isfinite(n)||n<INT_MIN||n>INT_MAX)return 0;*out=(int)lround(n);return 1;}
+static void pattern(Lane *l){int n=l->f[0],k=l->f[1],r=l->f[2];uint32_t bits=0;for(int i=0;i<n;i++){int j=(i-r+n)%n;if(k&&(j*k)%n<k)bits|=UINT32_C(1)<<i;}l->pattern=bits;}
+static void sanitize(Lane *l,int geometry){for(int j=0;j<NF;j++)l->f[j]=clampi(l->f[j],mins[j],maxs[j]);l->f[1]=clampi(l->f[1],0,l->f[0]);l->f[2]%=l->f[0];if(geometry)pattern(l);}
+static int audible(Engine *e,int i){int any=0;for(int j=0;j<LANES;j++)any|=e->lane[j].f[13];return !e->lane[i].f[12]&&(!any||e->lane[i].f[13]);}
+static int note(Engine *e,int i){return e->lane[i].f[e->mode?9:8];}
+static int duplicates(Engine *e){for(int i=0;i<LANES;i++)for(int j=i+1;j<LANES;j++)if(note(e,i)==note(e,j))return 1;return 0;}
+/* Coalesced bounded queue: UI gestures publish their actual dependencies only. */
+static void notify_id(Engine *e,int id){if(id<0||id>=CHANGED_COUNT||e->queued[id])return;e->queued[id]=1;e->changed[e->change_write]=id;e->change_write=(e->change_write+1)%CHANGED_COUNT;e->changes++;}
+static void changed_selected(Engine *e){notify_id(e,SELECT16_ID);for(int id=LANES*NF;id<LEGACY_CHANGED+14;id++)notify_id(e,id);for(int q=0;q<8;q++)notify_id(e,LEGACY_CHANGED+14+LANES*4+LANES*160+q);e->revision++;}
+static void changed_lane(Engine *e,int line){for(int f=0;f<NF;f++)notify_id(e,line*NF+f);for(int f=0;f<4;f++)notify_id(e,LEGACY_CHANGED+14+line*4+f);changed_selected(e);}
+static void changed_step(Engine *e,int line,int step,int field){notify_id(e,LEGACY_CHANGED+14+LANES*4+line*160+step*5+field);changed_selected(e);}
+static void changed_all(Engine *e){for(int id=0;id<CHANGED_COUNT;id++)notify_id(e,id);e->revision++;}
+/* Nonblocking ALSA work is bounded; failures retain ownership for later release. */
+static int cancel_tag(Engine *e,int lane){
+ if(!e->seq||!e->rem)return 0;
+ snd_seq_remove_events_set_queue(e->rem,e->queue);
+ snd_seq_remove_events_set_condition(e->rem,SND_SEQ_REMOVE_OUTPUT|SND_SEQ_REMOVE_TAG_MATCH);
+ snd_seq_remove_events_set_tag(e->rem,lane+1);
+ if(snd_seq_remove_events(e->seq,e->rem)<0){e->errors++;return 0;}return 1;
+}
+static int send_event(Engine *e,int line,int on,int n,int ch,int vel,double at){
+ if(!e->seq)return 0;snd_seq_event_t v;snd_seq_ev_clear(&v);snd_seq_ev_set_source(&v,e->port);snd_seq_ev_set_subs(&v);v.tag=(unsigned char)(line+1);
+ if(on)snd_seq_ev_set_noteon(&v,ch,n,vel);else snd_seq_ev_set_noteoff(&v,ch,n,0);
+ if(at>=0){
+  if(!isfinite(at)||at>UINT_MAX-1){e->errors++;return 0;}
+  snd_seq_real_time_t t;t.tv_sec=(unsigned)at;t.tv_nsec=(unsigned)((at-t.tv_sec)*1e9);
+  snd_seq_ev_schedule_real(&v,e->queue,0,&t);
+ }else snd_seq_ev_set_direct(&v);
+ if(snd_seq_event_output_direct(e->seq,&v)<0){e->errors++;return 0;}return 1;
+}
+static void flash_enqueue(Engine *e,int line,double at){
+ unsigned count=e->flash_count[line],read=e->flash_read[line];
+ /* Adjacent sub-hits can share one visible impulse. Overflow drops visuals only. */
+ if(count&&at-e->flash_at[line][(read+count-1)%FLASH_EVENTS]<1./120.)return;
+ if(count>=FLASH_EVENTS)return;
+ e->flash_at[line][(read+count)%FLASH_EVENTS]=at;e->flash_count[line]++;
+}
+static int flash_current(Engine *e,int line){
+ while(e->flash_count[line]){
+  double at=e->flash_at[line][e->flash_read[line]];if(at>e->queue_now)break;
+  e->flash_read[line]=(e->flash_read[line]+1)%FLASH_EVENTS;e->flash_count[line]--;
+  if(at+FLASH_SECONDS>e->flash_until[line])e->flash_until[line]=at+FLASH_SECONDS;
+ }
+ return e->playing&&audible(e,line)&&e->queue_now<e->flash_until[line];
+}
+static int release(Engine *e,int i){
+ e->flash_count[i]=e->flash_read[i]=0;e->flash_until[i]=0;
+ if(!e->seq){e->active_note[i]=-1;e->release_pending&=~(1u<<i);return 1;}
+ int cancelled=cancel_tag(e,i),off=e->active_note[i]<0||send_event(e,i,0,e->active_note[i],e->active_ch[i],0,-1);
+ if(cancelled&&off){e->active_note[i]=-1;e->release_pending&=~(1u<<i);return 1;}
+ e->release_pending|=1u<<i;return 0;
+}
+static void panic_owned(Engine *e){for(int i=0;i<LANES;i++)release(e,i);e->panic=0;}
+static int parse_suffix(const char *,const char *,int,int *);
+static int parse_lane(const char *,int *,int *);
+static int lane_prefix(const char *,int *,const char **);
+static void set_param(void *,const char *,const char *);
+static int get_param(void *,const char *,char *,int);
+static void visual_key(int,char *,int);
+#include "evolution.h"
+/* HOLD uses the same queue and timestamps as GATE; no additional MIDI path.
+   Each effective retrigger releases this lane first. Other lanes retain ownership. */
+static void trigger(Engine *e,const Hit *h,double bpm,double at,double max_duration){
+ int i=h->line;if(!audible(e,i)||(e->release_pending&(1u<<i)))return;int n=note(e,i),hold=e->lane[i].hold;
+ for(int k=0;k<LANES;k++){
+  if(k==i&&hold)continue;
+  if(e->active_note[k]==n&&e->active_ch[k]==e->channel&&((e->release_pending&(1u<<k))||e->active_off[k]>at+1e-7)){e->errors++;return;}
+ }
+ double dur=fmin(h->duration*60./bpm,max_duration);if(!(dur>0))return;
+ if(hold&&e->active_note[i]>=0){
+  if(!send_event(e,i,0,e->active_note[i],e->active_ch[i],0,at)){
+   e->release_pending|=1u<<i;release(e,i);return;
+  }
+ }
+ if(!send_event(e,i,1,n,e->channel,h->velocity,at)){
+  if(hold){e->release_pending|=1u<<i;release(e,i);}return;
+ }
+ e->active_note[i]=n;e->active_ch[i]=e->channel;e->active_off[i]=hold?INFINITY:at+dur;
+ if(!hold&&!send_event(e,i,0,n,e->channel,0,at+dur)){e->release_pending|=1u<<i;release(e,i);}
+ if(e->active_note[i]>=0&&!(e->release_pending&(1u<<i)))flash_enqueue(e,i,at);
+}
+static void *create(const char *dir){(void)dir;Engine *e=calloc(1,sizeof *e);if(!e)return NULL;e->port=e->queue=e->slot=-1;e->sample_rate=44100;e->random=0xa8e17f21u;e->valid=0;e->mode=1;e->edit_view=1;e->state_valid=1;
+ for(int i=0;i<32;i++){unsigned mask=1u<<i,old=atomic_load(&slots);while(!(old&mask)){if(atomic_compare_exchange_weak(&slots,&old,old|mask)){e->slot=i;break;}}if(e->slot>=0)break;}
+ if(e->slot<0){free(e);return NULL;}e->random^=(unsigned)e->slot*0x9e3779b9u;
+ for(int i=0;i<LANES;i++){init_lane(&e->lane[i],i);e->active_note[i]=-1;e->head[i]=-1;e->reset_at[i]=-1;}
+
+ if(snd_seq_open(&e->seq,"default",SND_SEQ_OPEN_OUTPUT,SND_SEQ_NONBLOCK)>=0){char name[64];snprintf(name,sizeof name,"piClideaN MPC%s%d",e->slot?" ":"",e->slot?e->slot+1:1);if(e->slot==0)strcpy(name,"piClideaN MPC");snd_seq_set_client_name(e->seq,name);e->port=snd_seq_create_simple_port(e->seq,"Out",SND_SEQ_PORT_CAP_READ|SND_SEQ_PORT_CAP_SUBS_READ,SND_SEQ_PORT_TYPE_MIDI_GENERIC|SND_SEQ_PORT_TYPE_APPLICATION);char qname[80];snprintf(qname,sizeof qname,"%s Clock",name);e->queue=snd_seq_alloc_named_queue(e->seq,qname);
+ if(snd_seq_set_client_pool_output(e->seq,4096)<0)e->errors++;
+ if(e->port>=0&&e->queue>=0&&snd_seq_remove_events_malloc(&e->rem)>=0&&snd_seq_queue_status_malloc(&e->queue_status)>=0){if(snd_seq_start_queue(e->seq,e->queue,NULL)<0||snd_seq_drain_output(e->seq)<0){snd_seq_close(e->seq);e->seq=NULL;e->errors++;}}else{snd_seq_close(e->seq);e->seq=NULL;e->errors++;}}
+ else{e->seq=NULL;e->errors++;}changed_all(e);return e;}
+static void destroy(void *inst){Engine *e=inst;if(!e)return;panic_owned(e);for(int retry=0;retry<2&&e->release_pending;retry++)for(int i=0;i<LANES;i++)if(e->release_pending&(1u<<i))release(e,i);if(e->seq){if(e->queue>=0){snd_seq_stop_queue(e->seq,e->queue,NULL);snd_seq_free_queue(e->seq,e->queue);}snd_seq_close(e->seq);}if(e->rem)snd_seq_remove_events_free(e->rem);if(e->queue_status)snd_seq_queue_status_free(e->queue_status);if(e->slot>=0)atomic_fetch_and(&slots,~(1u<<e->slot));free(e);}
+static void midi(void *inst,const uint8_t *msg,int len){(void)inst;(void)msg;(void)len;/* no MIDI echo, no second note path */}
+/* Parse a complete lane index: l9 and l10 must never alias. */
+static int lane_prefix(const char *key,int *line,const char **suffix){
+ if(key[0]!='l'||key[1]<'0'||key[1]>'9')return 0;
+ const char *p=key+1;int n=0,digits=0;
+ while(*p>='0'&&*p<='9'){if(++digits>2)return 0;n=n*10+*p++-'0';}
+ if(*p!='_'||n>=LANES)return 0;*line=n;*suffix=p+1;return 1;
+}
+static int parse_lane(const char *key,int *li,int *fi){
+ const char *suffix;if(!lane_prefix(key,li,&suffix))return 0;
+ for(int j=0;j<NF;j++)if(!strcmp(suffix,field_names[j])){*fi=j;return 1;}return 0;
+}
+static int parse_suffix(const char *key,const char *prefix,int limit,int *n){size_t z=strlen(prefix);if(strncmp(key,prefix,z))return 0;char *end;long v=strtol(key+z,&end,10);if(end==key+z||*end||v<0||v>=limit)return 0;*n=(int)v;return 1;}
+static int read_state(Engine *e,const char *v){
+ if(strncmp(v,"PICN1 ",6))return 0;const char *p=v+6;int nums[8+8*NF];for(unsigned i=0;i<sizeof nums/sizeof nums[0];i++){char *end;errno=0;long n=strtol(p,&end,10);if(errno||end==p||n<INT_MIN||n>INT_MAX)return 0;nums[i]=(int)n;p=end;while(*p==' ')p++;}if(strcmp(p,"END"))return 0;
+ if(nums[0]<0||nums[0]>7||nums[1]<0||nums[1]>1||nums[2]<0||nums[2]>15||nums[3]<0||nums[3]>7||nums[4]<0||nums[4]>31||nums[5]<0||nums[5]>5||nums[6]<0||nums[6]>7||nums[7]!=1)return 0;
+ Lane lanes[LANES];for(int i=0;i<LANES;i++)init_lane(&lanes[i],i);for(int i=0;i<8;i++){for(int j=0;j<NF;j++){int n=nums[8+i*NF+j];if(n<mins[j]||n>maxs[j])return 0;lanes[i].f[j]=n;}if(lanes[i].f[1]>lanes[i].f[0]||lanes[i].f[2]>=lanes[i].f[0])return 0;pattern(&lanes[i]);for(int j=0;j<32;j++)for(int k=0;k<5;k++)lanes[i].values[j][k]=-1;lanes[i].playmode=lanes[i].auto_rotate=0;lanes[i].shift=lanes[i].every=1;lanes[i].origin=0;}
+ for(int i=8;i<LANES;i++)lanes[i].f[9]=drum_notes[nums[3]*16+i];
+ e->selected=nums[0];e->mode=nums[1];e->channel=nums[2];e->bank=nums[3];e->step=nums[4];e->rhythm=nums[5];e->row=nums[6];memcpy(e->lane,lanes,sizeof lanes);e->dialog=0;e->panic=1;e->valid=0;changed_all(e);return 1;
+}
+static void set_param(void *inst,const char *key,const char *val){Engine *e=inst;if(!strcmp(key,"state")){e->state_valid=(!strncmp(val,"PICN2 ",6)||!strncmp(val,"PICN3 ",6)||!strncmp(val,"PICN4 ",6))?read_evolution(e,val):read_state(e,val);if(e->state_valid){e->q_valid=0;e->visual_ready=0;e->playing=0;for(int k=0;k<LANES;k++){e->reset_at[k]=-1;e->head[k]=-1;e->display_tick[k]=0;e->ui_offset[k]=0;}}return;}if(q_set(e,key,val))return;int v;if(!integer(val,&v))return;int i,j;
+ if(evolution_set(e,key,v))return;
+ if(!strcmp(key,"choose_target")||!strcmp(key,"choose_bank")||!strcmp(key,"choose_sound")){
+  int owned_dialog=!strcmp(key,"choose_target")?3:!strcmp(key,"choose_bank")?5:4;
+  const char *target=owned_dialog==3?"target_mode":owned_dialog==5?"bank":"map_sound";
+  set_param(inst,target,val);if(e->dialog==owned_dialog)e->dialog=0;changed_all(e);return;
+ }
+ if(!strcmp(key,"line")||!strcmp(key,"line_select")||!strcmp(key,"line_select16")){int top=!strcmp(key,"line_select16")?LANES-1:7;if(e->selected==clampi(v,0,top))return;e->q_valid=0;e->selected=clampi(v,0,top);e->step=clampi(e->step,0,e->lane[e->selected].f[0]-1);e->dialog=0;changed_selected(e);return;}
+ if(!strcmp(key,"target_mode")){if(e->mode==clampi(v,0,1))return;if(e->mode!=clampi(v,0,1))e->panic=1;e->mode=clampi(v,0,1);e->dialog=0;changed_selected(e);return;}
+ if(!strcmp(key,"channel")){if(e->channel==clampi(v,0,15))return;e->panic=1;e->channel=clampi(v,0,15);changed_selected(e);return;}
+ if(!strcmp(key,"bank")){if(e->bank==clampi(v,0,7))return;e->bank=clampi(v,0,7);for(int k=0;k<LANES;k++)e->lane[k].f[9]=drum_notes[e->bank*16+e->lane[k].f[10]];e->panic=1;e->dialog=0;changed_all(e);return;}
+ if(!strcmp(key,"selected_step")){if(e->step!=clampi(v,0,e->lane[e->selected].f[0]-1))e->q_valid=0;e->step=clampi(v,0,e->lane[e->selected].f[0]-1);changed_selected(e);return;}
+ if(!strcmp(key,"rhythm_choice")){if(e->rhythm==clampi(v,0,5))return;e->rhythm=clampi(v,0,5);changed_selected(e);return;}
+ if(!strcmp(key,"edit_row")){e->row=clampi(v,0,LANES-1);return;}
+ if(!strcmp(key,"map_sound")){if(e->lane[e->row].f[11]==clampi(v,0,11))return;e->lane[e->row].f[11]=clampi(v,0,11);if(e->lane[e->row].f[11]<11)e->lane[e->row].f[8]=36+e->lane[e->row].f[11];e->release_pending|=1u<<e->row;e->dialog=0;changed_all(e);return;}
+ if(!strncmp(key,"sel_",4)){for(j=0;j<NF;j++)if(!strcmp(key+4,field_names[j])){Lane *l=&e->lane[e->selected];int accepted=clampi(v,mins[j],j==2?l->f[0]-1:maxs[j]);if(l->f[j]==accepted)return;l->f[j]=accepted;sanitize(l,j<3);if(j<4)e->release_pending|=1u<<e->selected;e->step=clampi(e->step,0,l->f[0]-1);changed_lane(e,e->selected);return;}}
+ if(parse_lane(key,&i,&j)){int accepted=clampi(v,mins[j],j==2?e->lane[i].f[0]-1:maxs[j]);if(e->lane[i].f[j]==accepted)return;e->lane[i].f[j]=accepted;if(j==10)e->lane[i].f[9]=drum_notes[e->bank*16+e->lane[i].f[10]];if(j==11&&accepted<11)e->lane[i].f[8]=36+accepted;if(j==8){int d=e->lane[i].f[8]-36;e->lane[i].f[11]=(d>=0&&d<11)?d:11;}if(j>=8&&j<=11)e->release_pending|=1u<<i;sanitize(&e->lane[i],j<3);if(j<4)e->release_pending|=1u<<i;if(i==e->selected)e->step=clampi(e->step,0,e->lane[i].f[0]-1);changed_lane(e,i);return;}
+ /* Momentary actions fire only on the press. The wrapper's release must be a no-op. */
+ if(v<=0)return;
+ if(parse_suffix(key,"step_press",32,&i)){if(i>=e->lane[e->selected].f[0])return;int source=(i-e->ui_offset[e->selected]%e->lane[e->selected].f[0]+e->lane[e->selected].f[0])%e->lane[e->selected].f[0];if(source!=e->step){e->q_valid=0;}e->step=source;if(e->edit_view&&e->edit_tool){Lane *l=&e->lane[e->selected];l->values[e->step][0]=!effective_hit(l,e->step);changed_step(e,e->selected,e->step,0);}else changed_selected(e);return;}
+ if(parse_suffix(key,"edit_line",LANES,&i)){e->q_valid=0;e->selected=i;e->step=clampi(e->step,0,e->lane[i].f[0]-1);e->dialog=0;changed_selected(e);return;}
+ if(parse_suffix(key,"open_sound",LANES,&i)){e->row=i;e->dialog=4;changed_all(e);return;}
+ if(!strcmp(key,"open_rhythm")||!strcmp(key,"apply_rhythm"))return; /* retired IDs remain reserved */
+ else if(!strcmp(key,"open_mapping"))e->dialog=2;
+ else if(!strcmp(key,"open_target"))e->dialog=3;
+ else if(!strcmp(key,"open_bank"))e->dialog=5;
+ else if(!strcmp(key,"close"))e->dialog=0;
+
+ else if(!strcmp(key,"apply_mapping")){for(i=0;i<LANES;i++){e->lane[i].f[8]=36+i;e->lane[i].f[11]=i<11?i:11;}e->panic=1;e->dialog=0;}
+ else if(!strcmp(key,"randomize")){Lane *l=&e->lane[e->selected];int old[4];memcpy(old,l->f,sizeof old);for(int attempts=0;attempts<8;attempts++){l->f[0]=1+(int)(rng(e)%32);l->f[1]=1+(int)(rng(e)%(unsigned)l->f[0]);l->f[2]=(int)(rng(e)%(unsigned)l->f[0]);l->f[3]=(int)(rng(e)%5);if(memcmp(old,l->f,sizeof old))break;if(attempts==7)l->f[3]=(l->f[3]+1)%5;}for(i=0;i<32;i++)l->values[i][0]=-1;e->step=clampi(e->step,0,l->f[0]-1);pattern(l);e->release_pending|=1u<<e->selected;}
+ else if(!strcmp(key,"half")){e->lane[e->selected].f[3]=clampi(e->lane[e->selected].f[3]+1,0,4);e->release_pending|=1u<<e->selected;}
+ else if(!strcmp(key,"double")){e->lane[e->selected].f[3]=clampi(e->lane[e->selected].f[3]-1,0,4);e->release_pending|=1u<<e->selected;}
+ else return;
+ if(!strcmp(key,"randomize")){for(int k=0;k<32;k++)notify_id(e,LEGACY_CHANGED+14+LANES*4+e->selected*160+k*5);changed_lane(e,e->selected);}
+ else if(!strcmp(key,"half")||!strcmp(key,"double"))changed_lane(e,e->selected);
+ else if(!strcmp(key,"apply_mapping")){for(int k=0;k<LANES;k++)changed_lane(e,k);}
+ else changed_selected(e);
+}
+static int get_param(void *inst,const char *key,char *b,int size){Engine *e=inst;int n=-1,i,j;Lane *l=&e->lane[e->selected];
+ if(size<=0)return 0;
+ if(parse_suffix(key,"lane_flash",LANES,&i))return snprintf(b,size,"%d",e->visual_ready?e->visual_last[VIS_FLASH+i]:0);
+ if(!strcmp(key,"state_valid"))return snprintf(b,size,"%d",e->state_valid);
+ if(!strcmp(key,"state"))return write_evolution(e,b,size);
+ if(!strncmp(key,"toggle_",7))return snprintf(b,size,"0");
+ int extra=evolution_get(e,key,b,size);if(extra>=0)return extra;
+ if(!strcmp(key,"display_rev"))return snprintf(b,size,"%u",e->revision);
+ if(!strcmp(key,"choose_target"))n=e->mode;else if(!strcmp(key,"choose_bank"))n=e->bank;else if(!strcmp(key,"choose_sound"))n=e->lane[e->row].f[11];else if(!strcmp(key,"line")||!strcmp(key,"line_select"))n=clampi(e->selected,0,7);else if(!strcmp(key,"line_select16"))n=e->selected;else if(!strcmp(key,"pattern_base"))n=e->dialog!=1;else if(!strcmp(key,"setup_base"))n=e->dialog<2;else if(!strcmp(key,"target_mode"))n=e->mode;else if(!strcmp(key,"channel"))n=e->channel;else if(!strcmp(key,"bank"))n=e->bank;else if(!strcmp(key,"selected_step"))n=e->step;else if(!strcmp(key,"rhythm_choice"))n=e->rhythm;else if(!strcmp(key,"dialog"))n=e->dialog;else if(!strcmp(key,"edit_row"))n=e->row;else if(!strcmp(key,"map_sound"))n=e->lane[e->row].f[11];
+ else if(!strncmp(key,"sel_",4)){for(j=0;j<NF;j++)if(!strcmp(key+4,field_names[j])){n=l->f[j];break;}}
+ else if(parse_lane(key,&i,&j))n=e->lane[i].f[j];
+ else if(parse_suffix(key,"line_on",LANES,&i))n=e->selected==i;
+ else if(parse_suffix(key,"preview",32,&i))n=4; /* retired RHYTHM readout */
+ else if(parse_suffix(key,"cell",32,&i)){n=i>=l->f[0]?8:((l->pattern>>i)&1);if(e->step==i)n+=i>=l->f[0]?1:2;if(i<l->f[0]&&e->playing&&e->head[e->selected]==i)n+=4;}
+ else if(sscanf(key,"g%d_%d",&i,&j)==2&&i>=0&&i<LANES&&j>=0&&j<32){Lane *t=&e->lane[i];n=j>=t->f[0]?4:((t->pattern>>j)&1);if(j<t->f[0]&&e->playing&&e->head[i]==j)n+=2;}
+ else if(!strcmp(key,"line_label")){if(!e->mode)return snprintf(b,size,"%02d - %s",e->selected+1,sounds[l->f[11]]);return snprintf(b,size,"%02d - %c%02d",e->selected+1,'A'+e->bank,l->f[10]+1);}
+ else if(!strcmp(key,"target_label"))return snprintf(b,size,"%s / CH %d / NOTE %d",e->mode?"DRUM TRACK":"INSTRUMENT",e->channel+1,note(e,e->selected));
+ else if(!strcmp(key,"status"))return snprintf(b,size,"%s / %s%s%s",e->playing?"PLAY":"STOP",e->seq?"MIDI READY":"NO MIDI PORT",e->errors?" / CHECK MIDI":"",duplicates(e)?" / SHARED NOTE":"");
+ else if(!strcmp(key,"step_label"))return snprintf(b,size,"STEP %02d / %s",e->step+1,e->step>=l->f[0]?"OUTSIDE":((l->pattern>>e->step)&1)?"HIT":"REST");
+ else if(!strcmp(key,"mapping_label"))return snprintf(b,size,"%s",e->mode?"FORCE REFERENCE":"INCIPIENCE NOTES");
+ else if(!strcmp(key,"port_label")){if(!e->slot)return snprintf(b,size,"piClideaN MPC Out");return snprintf(b,size,"piClideaN MPC %d Out",e->slot+1);}
+ else if(parse_suffix(key,"name",LANES,&i)){if(!e->mode)return snprintf(b,size,"%s",sounds[e->lane[i].f[11]]);return snprintf(b,size,"%c%02d",'A'+e->bank,e->lane[i].f[10]+1);}
+ else {return 0;}
+ return n>=0?snprintf(b,size,"%d",n):0;
+}
+int mpc_engine_changed(void *inst,char *key,int len){
+ Engine *e=inst;
+ while(e->changes>0){
+  int id=e->changed[e->change_read],k=id;e->change_read=(e->change_read+1)%CHANGED_COUNT;e->changes--;e->queued[id]=0;
+  /* Legacy selectors have an eight-lane normalized range. Do not publish
+     their clamped mirror: a host echo could otherwise reselect lane 8. */
+  if(k==LANES*NF+10||k==LANES*NF+16)continue;
+  if(k>=HOLD_ID){snprintf(key,len,"l%d_hold",k-HOLD_ID);}
+  else if(k==SELECT16_ID){snprintf(key,len,"line_select16");}
+  else if(k>=LEGACY_CHANGED){evolution_key(k-LEGACY_CHANGED,key,len);}
+  else if(k<LANES*NF)snprintf(key,len,"l%d_%s",k/NF,field_names[k%NF]);
+  else{
+   k-=LANES*NF;
+   if(k<8)snprintf(key,len,"sel_%s",field_names[k]);
+   else{static const char *keys[]={"sel_mute","sel_solo","line","target_mode","channel","bank","map_sound","dialog","line_select","pattern_base","setup_base"};snprintf(key,len,"%s",keys[k-8]);}
+  }
+  char value[32],*end;
+  if(get_param(e,key,value,sizeof value)<=0)continue;errno=0;double current=strtod(value,&end);if(errno||end==value||*end||!isfinite(current))continue;
+  /* Do not re-report unchanged option lists: the generic wrapper refreshes those.
+     Reporting every option on each knob write would resurrect the Q-Link bug. */
+  if(e->have_changed[id]&&fabs(e->last_changed[id]-current)<1e-7)continue;
+  e->have_changed[id]=1;e->last_changed[id]=current;return (int)strlen(key);
+ }
+ for(int scanned=0;scanned<VISUALS;scanned++){
+  int id=e->visual_cursor;e->visual_cursor=(e->visual_cursor+1)%VISUALS;
+  if(!e->visual_dirty[id])continue;e->visual_dirty[id]=0;visual_key(id,key,len);return (int)strlen(key);
+ }
+ return 0;
+}
+/* Port-local host bridge: supplied by our documented wrapper patch, not by Euclidier. */
+void picn_engine_context(void *inst,double a,double b,int flags,double sr){Engine *e=inst;e->sample_rate=isfinite(sr)&&sr>=8000&&sr<=192000?sr:44100;e->cycle=(flags&(1<<2))&&(flags&(1<<12))&&isfinite(a)&&isfinite(b)&&a>=0&&b<=1e9&&b>a;e->cycle_a=a;e->cycle_b=b;}
+/* Each ratchet group is reconstructed from its absolute step identity, so block
+   boundaries do not redraw probability or lose later repeats. No catch-up notes. */
+static int hit_after(const Hit *a,const Hit *b){return a->beat>b->beat||(a->beat==b->beat&&(a->line>b->line||(a->line==b->line&&a->repeat>b->repeat)));}
+static void sift_hits(Hit *hits,int root,int count){
+ for(;;){int child=root*2+1;if(child>=count)return;if(child+1<count&&hit_after(&hits[child+1],&hits[child]))child++;if(!hit_after(&hits[child],&hits[root]))return;Hit tmp=hits[root];hits[root]=hits[child];hits[child]=tmp;root=child;}
+}
+static void sort_hits(Hit *hits,int count){
+ for(int root=count/2;root>0;)sift_hits(hits,--root,count);
+ for(int end=count-1;end>0;end--){Hit tmp=hits[0];hits[0]=hits[end];hits[end]=tmp;sift_hits(hits,0,end);}
+}
+static int span(Engine *e,double a,double b,double bpm,double time_base,double cycle_end,int *budget){
+ Hit hits[EVENTS];int nh=0;if(!(b>a))return 1;
+ for(int i=0;i<LANES;i++){Lane *l=&e->lane[i];double d=step_beats[l->f[3]],k0=floor(a/d),k1=ceil(b/d);if(k1-k0>64){e->errors++;return 0;}
+  for(double k=k0;k<k1;k++){double start=k*d;if(e->reset_at[i]>=0&&start>=e->reset_at[i]-1e-8){l->origin=start;e->reset_at[i]=-1;}int position=visit_index(l,k),source=source_index(l,position,k);if(!audible(e,i)||!effective_hit(l,source))continue;
+   unsigned seed=mix32(l->seed^(unsigned)fmod(k,4294967295.)^mix32((unsigned)floor(k/4294967295.)));int prob=effective_value(l,source,2);if(prob<100&&(int)(seed%100)>=prob)continue;
+   int human=l->f[5],vel=clampi(effective_value(l,source,1)+(human?(int)(mix32(seed^0x984a21u)%(unsigned)(2*human+1))-human:0),1,127);
+   int count=effective_value(l,source,3),decay=effective_value(l,source,4);double sub=d/count,velocity=vel;
+   for(int r=0;r<count;r++){double beat=start+r*sub;int value=clampi((int)lround(velocity),0,127);velocity*=decay/100.;if(!value||beat<a||beat>=b)continue;
+    if(nh>=EVENTS||*budget<=0){e->errors++;return 0;}(*budget)--;hits[nh++]=(Hit){i,source,r,value,beat,sub*l->f[7]/100.};}
+  }
+ }
+ sort_hits(hits,nh);
+ for(int i=0;i<nh;i++){double offset=(hits[i].beat-a)*60./bpm,limit=isfinite(cycle_end)?(cycle_end-hits[i].beat)*60./bpm:INFINITY;trigger(e,&hits[i],bpm,time_base+offset,limit);}return 1;
+}
+/* Clear only playback indication; the inspected step remains selected. */
+static void clear_playhead(Engine *e){
+ int changed=e->playing;
+ for(int i=0;i<LANES;i++){if(e->head[i]!=-1)changed=1;e->head[i]=-1;e->reset_at[i]=-1;}
+ e->playing=0;e->valid=0;
+ if(changed)e->revision++;
+}
+/* No host screen rebuild: publish only changed numeric visual handles. */
+static void visual_key(int id,char *key,int size){
+ if(id<32)snprintf(key,size,"cell%d",id);
+ else if(id<288)snprintf(key,size,"g%d_%d",(id-32)/32,(id-32)%32);
+ else if(id<VIS_PREVIEW)snprintf(key,size,"line_on%d",id-VIS_LANE);
+ else if(id<VIS_CELL)snprintf(key,size,"preview%d",id-VIS_PREVIEW);
+ else if(id<VIS_PHASE)snprintf(key,size,"editcell%d",id-VIS_CELL);
+ else if(id<VIS_CUSTOM)snprintf(key,size,"%s",id==VIS_PHASE?"phase_cycle":"phase_offset");
+ else if(id<VIS_POSITION)snprintf(key,size,"step_custom%d",id-VIS_CUSTOM);
+ else if(id==VIS_POSITION)snprintf(key,size,"step_position");
+ else if(id<VIS_FLASH)snprintf(key,size,"trackcell%d_%d",(id-VIS_TRACK)/32,(id-VIS_TRACK)%32);
+ else snprintf(key,size,"lane_flash%d",id-VIS_FLASH);
+}
+static void visual_snapshot(Engine *e,int frames,int force){
+ if(e->visual_ready&&e->visual_revision==e->revision&&!e->playing)return;
+ e->visual_frames+=frames;
+ if(!force&&e->visual_ready&&e->visual_revision==e->revision&&e->visual_frames<e->sample_rate/30.)return;
+ /* Playback and UI writes share the same display cap; MIDI never waits for it. */
+ if(!force&&e->visual_ready&&e->visual_frames<e->sample_rate/30.)return;
+ e->visual_frames=0;int offsets[LANES];for(int i=0;i<LANES;i++){offsets[i]=rotation_at(&e->lane[i],e->display_tick[i]);e->ui_offset[i]=offsets[i];}
+ Lane *selected=&e->lane[e->selected];
+ for(int id=0;id<VISUALS;id++){
+  int v=0;
+  if(id<288){continue;} /* Retired legacy visual handles remain readable, not polled. */
+  else if(id<VIS_PREVIEW)v=e->selected==id-VIS_LANE;
+  else if(id<VIS_CELL)v=4; /* retired RHYTHM readouts */
+  else if(id<VIS_PHASE){int j=id-VIS_CELL,source=j<selected->f[0]?(j-offsets[e->selected]+selected->f[0])%selected->f[0]:j;v=j>=selected->f[0]?16:effective_hit(selected,source)+(source==e->step?2:0)+(e->playing&&e->head[e->selected]==j?4:0)+(personalized(selected,source)?8:0);if(j>=selected->f[0]&&j==e->step)v++;}
+  else if(id==VIS_PHASE)v=(int)fmax(1.,fmin(INT_MAX,floor(local_tick(selected,e->display_tick[e->selected])/cycle_size(selected))+1));
+  else if(id==VIS_PHASE+1)v=offsets[e->selected];
+  else if(id<VIS_POSITION)v=selected->values[e->step][id-VIS_CUSTOM+1]>=0;
+  else if(id==VIS_POSITION)v=e->step<selected->f[0]?(e->step+offsets[e->selected])%selected->f[0]+1:e->step+1;
+  else if(id<VIS_FLASH){int line=(id-VIS_TRACK)/32,j=(id-VIS_TRACK)%32;Lane *l=&e->lane[line];int source=j<l->f[0]?(j-offsets[line]+l->f[0])%l->f[0]:j;v=j>=l->f[0]?8:effective_hit(l,source)+(e->playing&&e->head[line]==j?2:0)+(personalized(l,source)?4:0);}
+  else v=flash_current(e,id-VIS_FLASH);
+  if(!e->visual_ready||e->visual_last[id]!=v){e->visual_last[id]=v;e->visual_dirty[id]=1;}
+ }
+ e->visual_ready=1;e->visual_revision=e->revision;
+}
+static void song_pos(void *inst,double ppq,double bpm,int playing,int frames){
+ Engine *e=inst;
+ if(e->panic)panic_owned(e);
+ for(int i=0;i<LANES;i++)if((e->release_pending&(1u<<i))||(e->active_note[i]>=0&&!audible(e,i)))release(e,i);
+ if(!playing||!isfinite(ppq)||ppq<0||ppq>1e9||!isfinite(bpm)||bpm<=0||bpm>1000||frames<=0){if(e->playing)panic_owned(e);clear_playhead(e);visual_snapshot(e,0,1);return;}
+ double block=(double)frames/e->sample_rate*bpm/60.;
+ if(!isfinite(block)||block>4||!e->seq||!e->queue_status||snd_seq_get_queue_status(e->seq,e->queue,e->queue_status)<0){if(e->seq)e->errors++;panic_owned(e);clear_playhead(e);visual_snapshot(e,0,1);return;}
+ const snd_seq_real_time_t *qt=snd_seq_queue_status_get_real_time(e->queue_status);
+ e->queue_now=qt->tv_sec+qt->tv_nsec/1e9;
+ /* The host PPQ is a measured position, not an exact sample-clock increment.
+    Keep a coverage watermark: overlapping intervals never repeat
+    notes and ordinary host rounding must never cancel the kernel queue. */
+ double host_ppq=ppq;
+ double tolerance=fmax(1./960.,block*2.);
+ double gap=e->valid?ppq-e->expected_ppq:0.;
+ if(e->valid&&e->cycle){double length=e->cycle_b-e->cycle_a;
+  if(fabs(gap-length)<=tolerance)gap-=length;
+  else if(fabs(gap+length)<=tolerance)gap+=length;
+ }
+ int cycle_wrap=e->valid&&e->cycle&&fabs(gap)<=tolerance&&
+  e->last_host_ppq>=e->cycle_a&&e->last_host_ppq<e->cycle_b&&
+  host_ppq>=e->cycle_a&&host_ppq<e->cycle_b;
+ int backwards=e->valid&&host_ppq<e->last_host_ppq-tolerance&&!cycle_wrap;
+ /* A forward discontinuity larger than four blocks is a seek. Small gaps
+    belong to the next covered interval instead of silently losing its hits. */
+ int jump=e->valid&&(backwards||fabs(gap)>fmax(.25,block*4.));
+ if(jump){panic_owned(e);e->valid=0;for(int i=0;i<LANES;i++)e->reset_at[i]=-1;}
+ for(int i=0;i<LANES;i++)if(!(e->release_pending&(1u<<i))&&e->active_note[i]>=0&&e->active_off[i]<=e->queue_now)e->active_note[i]=-1;
+ double base=e->valid?e->queue_end:e->queue_now+0.002;
+ if(e->valid){
+  /* gap is already unwrapped across a predicted loop. Keep the watermark
+     inside the musical cycle; only the interval length uses that signed gap. */
+  ppq=e->expected_ppq;block+=gap;
+  if(block<=1e-10){e->last_host_ppq=host_ppq;visual_snapshot(e,frames,0);return;}
+ }
+ /* Scheduling late is not a musical seek. Reanchor pending new notes only;
+    never erase already queued Note On/Off because of callback jitter. */
+ if(base<e->queue_now+0.001)base=e->queue_now+0.002;
+ /* Never pull a future boundary backwards: that would overlap prior notes. */
+ double pos=ppq,remaining=block,elapsed=0;
+ int budget=EVENTS;
+ int in_cycle=e->cycle&&pos>=e->cycle_a-1e-8&&pos<e->cycle_b;
+ for(int segments=0;remaining>1e-10&&segments<64;segments++){
+  double duration=remaining;
+  if(in_cycle)duration=fmin(duration,e->cycle_b-pos);
+  if(duration<=1e-10){pos=e->cycle_a;continue;}
+  if(!span(e,pos,pos+duration,bpm,base+elapsed*60./bpm,in_cycle?e->cycle_b:INFINITY,&budget)){panic_owned(e);clear_playhead(e);visual_snapshot(e,0,1);return;}
+  pos+=duration;elapsed+=duration;remaining-=duration;
+  if(in_cycle&&pos>=e->cycle_b-1e-10){pos=e->cycle_a;for(int i=0;i<LANES;i++)if(e->reset_at[i]>=0)e->reset_at[i]=e->cycle_a;}
+ }
+ if(remaining>1e-10){e->errors++;panic_owned(e);clear_playhead(e);visual_snapshot(e,0,1);return;}
+ e->queue_end=base+elapsed*60./bpm;e->expected_ppq=pos;e->last_host_ppq=host_ppq;
+ int moved=0;
+ for(int i=0;i<LANES;i++){double k=floor((ppq+1e-7)/step_beats[e->lane[i].f[3]]);e->display_tick[i]=k;long h=visit_index(&e->lane[i],k);if(e->head[i]!=h){moved=1;e->head[i]=h;}}
+ if(moved||!e->playing)e->revision++;
+ int starting=!e->playing;e->playing=1;e->valid=1;
+ visual_snapshot(e,frames,starting);
+}
+static void render(void *inst,int16_t *out,int frames){(void)inst;if(out&&frames>0)memset(out,0,(size_t)frames*4);}
+static const mpc_engine_t api={create,destroy,midi,set_param,get_param,render,NULL,song_pos};
+const mpc_engine_t *mpc_engine(void){return &api;}

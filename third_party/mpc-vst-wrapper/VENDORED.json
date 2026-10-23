@@ -1,0 +1,48 @@
+{
+  "repo": "sd88me/mpc-vst-plugins",
+  "commit": "97a2effca4114dd00f738b018e2f0d1d3ccb2d7f",
+  "modifications": "Host transport/sample-rate bridge, canonical automation, bounded notifications, state parsing and 32 KiB state storage; see LOCAL-*.patch.",
+  "files": [
+    {
+      "file": "LICENSE",
+      "sha256": "ce8ee66cb52d9d54312bc5d0c3c041ce3bc8eec9f482370b80ccb29b5a9ea66e"
+    },
+    {
+      "file": "wrapper/engine.h",
+      "sha256": "86f2ba335657106ceedd8bd78188ac80d194cf44ddbfe6e0f69436927f5e8a5d"
+    },
+    {
+      "file": "wrapper/plugin_dir.h",
+      "sha256": "3c513cfbe2a75ceca5a78ebbd710b9ebf935b0d2387de6fc48685bced80b0154"
+    },
+    {
+      "file": "wrapper/popup.h",
+      "sha256": "e6b0c386779c1e11897a6697fbcba67f39472424aa49bbaff2bdc6886320e9a1"
+    },
+    {
+      "file": "wrapper/vst2_wrap.c",
+      "sha256": "d94e87f55d71cb83f7e1ba2d242b129447ede16453bfbdb8cc08eeb98112abe0"
+    },
+    {
+      "file": "tools/gen_vst.py",
+      "sha256": "a6ea25f7191bf80deebfcfcd3e6a4f39a43fa64dbb8390fb22c59d341f837377"
+    },
+    {
+      "file": "tools/params.py",
+      "sha256": "2d5c8b5dd62979c691a50fbccb44fe05b0fb626e24d7f1aa70d6bdb92748b3ef"
+    },
+    {
+      "file": "LOCAL-NOTIFICATIONS.patch",
+      "sha256": "cdd1739089b1df411fac70fb67d6cea950581fd3e6298e21ed2e50f0b48ff00e"
+    },
+    {
+      "file": "LOCAL-STATE-VALIDATION.patch",
+      "sha256": "b7aaefde5199a799bba0474bb140e429e48ef377c43741801a89a944eb8c4441"
+    },
+    {
+      "file": "LOCAL-STATE-CAPACITY.patch",
+      "sha256": "9d3cb6680347d9e366fbb0f210b4b416334bc58b0019f0d9d3e6b04306cd11fb"
+    }
+  ],
+  "patched_wrapper_sha256": "6fa152e13f442f440c91e20d032d5be7ece0b3f37d324f43960896549e0277b8"
+}
