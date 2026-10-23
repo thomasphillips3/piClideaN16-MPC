@@ -10,7 +10,7 @@ The package contains regular files, requires no symbolic links and can be stored
 
 ## Install
 
-1. Save the current Force project before allowing an installer to restart MPC.
+1. Save the current project before allowing an installer to restart MPC.
 2. Open the installer's local ZIP installation page.
 3. Select `piClideaN-MPC-1.1.2-armv7.zip` from `Installation/`.
 4. Select **User memory / Synths** or the available **SSD / Synths** destination.
