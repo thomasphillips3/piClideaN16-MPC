@@ -1,6 +1,6 @@
 # πClideaN16 MPC — User Manual
 
-Version 1.1.2
+Version 1.1.3
 
 ## 1. Overview
 

@@ -36,11 +36,22 @@ def label(x,y,w,h,n=24,handle='Data',kind='Value',colour='ffe8e5d0'):
  c=child('Label',dict(version=1,textStyle=dict(version=1,font=dict(version=1,name='Titillium Web',style='Regular',height=float(n)),colour=colour,justification='left verticallyCentred',case='Original'),type=kind,handleName=handle),x,y,w,h);c['bounds']['acceptsHWFocus']='No';return c
 def readout(key,x,y,w,h,n=24):
  k=local(f'read_{key}_{x}_{y}',[label(0,0,w,h,n)]);c=placed(k,key,x,y,w,h);c['bounds']['acceptsHWFocus']='No';return c
-def button(key,title,x,y,w,h,momentary=True,id=1,count=2,extra=None,tag=None):
+def button(key,title,x,y,w,h,momentary=True,id=1,count=2,extra=None,tag=None,native_touch=False):
  tag=tag or f'btn_{key}_{x}_{y}_{id}'
  for state in [0,1]:
   im,d=image(w,h,C['amber_bg'] if state else C['panel']);d.rounded_rectangle((1,1,w-2,h-2),radius=3,outline=C['amber_edge'] if state else '#727d81');text(d,(w//2,h//2),title,21,C['amber_text'] if state else C['text'],'mm');save(tag+f'_{state}.png',im)
- k=local(tag,[child('Button',dict(version=2,onImage=tag+'_1.png',offImage=tag+'_0.png',buttonId=id,numButtonsInGroup=count,handleName='Data',gestureBehaviour='Momentary' if momentary else 'Instant'),0,0,w,h)],[action('Q-Link'),dict(action('Toggle Switch'),onAction='Enter Pressed')],focus=True)
+ if native_touch:
+  # A single touch owner, matching the working step-pad triggers. A nested
+  # Momentary Button can retain its pressed gesture until focus moves away.
+  # The wrapper already sends the trigger's release; artwork follows Data.
+  children=[]
+  for state in [0,1]:
+   c=art(tag+f'_{state}.png',0,0,w,h)
+   c['bounds']['additionalInvalidatingHandles']=[gate(key,state,2)]
+   children.append(c)
+  k=local(tag,children,[action('Toggle Switch'),dict(action('Toggle Switch'),onAction='Enter Pressed')],focus=True)
+ else:
+  k=local(tag,[child('Button',dict(version=2,onImage=tag+'_1.png',offImage=tag+'_0.png',buttonId=id,numButtonsInGroup=count,handleName='Data',gestureBehaviour='Momentary' if momentary else 'Instant'),0,0,w,h)],[action('Q-Link'),dict(action('Toggle Switch'),onAction='Enter Pressed')],focus=True)
  if not momentary:
   for element in defs[-1]['value']['componentsData']:
    if element['componentData']['type']=='Focus':element['bounds']['additionalInvalidatingHandles']=[gate(key,id,count)]
@@ -88,7 +99,7 @@ for i in range(16):
  kind=local(tag,children,[action('Q-Link')]);parts.append(placed(kind,'line_select16',x,12+(i//8)*52,w,h))
 parts += [button('edit_view','LINE',20,394,148,46,False,0,2),button('edit_view','EDIT',176,394,148,46,False,1,2)]
 parts += [*toggle('sel_mute','MUTE',488,394,148,46),*toggle('sel_solo','SOLO',644,394,148,46)]
-for control in [button('half','1/2',800,394,148,46),button('double','x2',956,394,148,46),button('randomize','RAND',1112,394,148,46)]:
+for control in [button('half','1/2',800,394,148,46),button('double','x2',956,394,148,46),button('randomize','RAND',1112,394,148,46,native_touch=True)]:
  control['bounds']['additionalInvalidatingHandles'].append(gate('edit_view',0,2));parts.append(control)
 parts += [button('edit_tool','SELECT',800,394,148,46,False,0,2,extra=[gate('edit_view',1,2)]),button('edit_tool','DRAW',956,394,148,46,False,1,2,extra=[gate('edit_view',1,2)]),button('erase_values','ERASE',1112,394,148,46,extra=[gate('edit_view',1,2)])]
 # Opaque display artwork, headers and four controls per scope.
