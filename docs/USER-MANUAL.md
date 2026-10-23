@@ -5,7 +5,8 @@ Version 1.1.3
 ## 1. Overview
 
 πClideaN provides sixteen independent rhythmic lanes. 
-Each lane triggers one MIDI note on a shared output channel. Use the lanes for individual Drum Track pads or the sounds of a drum instrument.
+Each lane triggers one MIDI note on a shared output channel. 
+Use the lanes for individual Drum Track pads or the sounds of a drum instrument.
 
 The five pages are PATTERN, TR 01-08, TR 09-16, SET 01-08 and SET 09-16. 
 Lane buttons A01–A16 select a sequencer lane.
