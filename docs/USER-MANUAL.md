@@ -118,9 +118,29 @@ A violet rest remains silent until its trigger is enabled. A custom value can eq
 
 ## 5. TR pages — playback and rotation
 
-![Track controls](images/tracks.png)
+![TRACKS on Akai Force: lane A07 selected, lane A03 muted, automatic rotation enabled](images/tracks-force-1.2.0.png)
 
-TR 01-08 and TR 09-16 show eight lanes each. Select a lane to edit its settings on the right. M and S control each lane's mute and solo state.
+TR 01-08 and TR 09-16 show eight lanes each. Tap A01–A16 to select a lane; its button gains a white outline and the controls on the right follow that lane. In the screenshot, A07 is selected.
+
+### Reading the lane overview
+
+Each row shows the lane button, its assigned sound or pad name, a 32-step preview, and M / S buttons.
+
+- Dark tiles represent rests; steps beyond the lane length are dimmed.
+- Dark red tiles with red outlines indicate active hits without custom step-expression values.
+- Purple tiles indicate steps with custom expression values. They can also represent a rest with stored values; purple alone does not guarantee a note will play.
+- A light outline marks the playback position while the transport is running. It is separate from the red or purple step colour.
+- Patterns can remain visible on muted lanes: the overview shows stored rhythm data, not proof of an audible note.
+
+### Mute and Solo
+
+- Tap **M** to mute that lane. Its M button stays amber until tapped again. In the screenshot, A03 is muted.
+- Tap **S** to solo that lane. Its S button stays amber until tapped again. Multiple lanes can be soloed together.
+- When any lane is soloed, only soloed lanes can play. Mute takes precedence, including on a soloed lane.
+
+These buttons work by touch and affect their own row, independently of which lane is selected for the right-hand controls.
+
+### Playback mode
 
 Playback modes:
 
@@ -132,11 +152,19 @@ Playback modes:
 
 For four steps, PEND1 visits 1–2–3–4–4–3–2–1; PEND2 visits 1–2–3–4–3–2. A one-step lane always visits that single step.
 
+### Automatic rotation
+
+Tap AUTO ROTATE to switch rotation on or off for the selected lane. The button stays amber when enabled, as shown for A07 in the screenshot.
+
 AUTO ROTATE shifts the pattern content after the chosen number of complete lane cycles. SHIFT is -8 to +8 steps; EVERY is 1–16 cycles. A cycle is based on the playback mode, not necessarily a Force bar. Per-step values move with their triggers. PATTERN and TR show the same rotating content.
+
+### Phase and reset
 
 RESET PHASE requests a fresh phase at the next step boundary while playing. CYCLE and SHIFT display the current phase. The selected step follows its stored data when rotation moves it to another visible position.
 
 ## 6. SET pages — GATE / HOLD
+
+![SET page on Akai Force: independent GATE and HOLD modes for each lane](images/setup-force-1.1.4.png)
 
 Each lane has a GATE / HOLD button in the MODE column, immediately before SOUND / PAD. It is available in both SET 01–08 and SET 09–16 and affects only that lane.
 
@@ -151,7 +179,7 @@ For example, set lane A13 to HOLD to let a long sound continue across empty step
 The SET button selects the **note-duration mode**; the PATTERN knob sets the **duration percentage used in GATE mode**. These are two different controls. Each lane can use a different mode, and the choices are saved with the Force project.
 
 
-GATE sends a Note Off after the calculated gate length. HOLD sustains the note until the next effective trigger on that lane. It releases the previous note before sending the next Note On.
+### Release behaviour and target setup
 
 - Rests and probability-rejected triggers leave a held note playing.
 - Each audible ratchet retriggers; the final repeat remains held.
