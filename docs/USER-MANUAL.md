@@ -17,13 +17,13 @@ On the target track, choose `piClideaN MPC Out` as an input and match its channe
 
 Each instance owns a separate MIDI output. Additional instances use numbered port labels. Select the correct output on each target.
 
-![SET page](images/setup.png)
+![Connect a target — SET page captured on Akai Force](images/setup.png)
 
 DRUM TRACK is the default target. Bank A provides notes 36–51 as the initial sixteen-pad mapping. Bank selection applies the supplied note table; it does not inspect another track. Notes remain editable. DRUM INSTRUMENT provides named sounds and an Incipience note-map action; check the instrument's note assignments before applying it. Mapping changes do not rewrite the rhythm.
 
 ## 3. PATTERN — LINE
 
-![PATTERN in LINE mode](images/pattern-line.png)
+![PATTERN — LINE mode captured on Akai Force](images/pattern-line.png)
 
 Choose a lane with A01–A16, then choose LINE.
 
@@ -80,7 +80,7 @@ Available targets: Velocity, Probability, Humanize, Gate, Steps, Hits, Rotate an
 
 ## 4. PATTERN — EDIT
 
-![PATTERN in EDIT mode](images/pattern-edit.png)
+![PATTERN — EDIT mode captured on Akai Force](images/pattern-edit.png)
 
 The upper LINE row retains the lane defaults. The lower STEP row edits the selected step:
 
