@@ -108,6 +108,10 @@ add('line_select16','Selected lane',0,15,0,refresh_display=True,nudge_pct=10)
 for i in range(16):add(f'l{i}_hold',f'L{i+1} note hold',0,1,0)
 # Playback indicators are read-only visual parameters, never automation targets.
 for i in range(16):add(f'lane_flash{i}',f'Lane {i+1} activity',0,1,0,poll=False)
+# Transient selective-RAND controls: append only; no automation or project state.
+add('rand_mode','RAND selection mode',0,1,0,poll=False)
+for i in range(8):add(f'rand_pick{i}',f'RAND selected parameter {i+1}',0,1,0,poll=False)
+for i in range(8):trig(f'rand_toggle{i}',f'Choose RAND parameter {i+1}')
 (B/'params.json').write_text(json.dumps(P,ensure_ascii=True,indent=2)+'\n')
 (B/'vst.json').write_text(json.dumps(dict(name=DISPLAY_NAME,vendor='Timo',uid='PiCN',version=11200,so='piclidean_mpc.so',params='params.json',custom_skin=True,cc=False,nrpn=False,defines={'HAS_SONG_POS':1,'HAS_DISPLAY_REV':0,'DISPLAY_REV_NO_UPDATE':1,'PARAM_TEXT_MAX':64,'PICN_HOST_CONTEXT':1,'MPC_CHUNK_BYTES':32768}),indent=2)+'\n')
 (B/'profiles/incipience.json').write_text(json.dumps(dict(id='incipience-default-notes',sounds=[dict(name=n,note=36+i) for i,n in enumerate(sounds[:11])],simultaneous_lanes=16),indent=2)+'\n')

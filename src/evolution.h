@@ -8,7 +8,7 @@ static double local_tick(const Lane *l,double tick){return floor(tick-l->origin/
 static int rotation_at(const Lane *l,double tick){if(!l->auto_rotate)return 0;double cycles=floor(local_tick(l,tick)/cycle_size(l));int offset=(int)fmod(floor(cycles/l->every)*l->shift,l->f[0]);return (offset+l->f[0])%l->f[0];}
 static int visit_index(const Lane *l,double tick){int n=l->f[0],size=cycle_size(l),p=(int)fmod(local_tick(l,tick),size);if(p<0)p+=size;if(l->playmode==1)return n-1-p;if(l->playmode==2)return p<n?p:2*n-1-p;if(l->playmode==3)return p<n?p:2*n-2-p;if(l->playmode==4){unsigned order[32],seed=mix32(l->seed^(unsigned)fmod(fmod(floor(local_tick(l,tick)/size),4294967295.)+4294967295.,4294967295.));for(int i=0;i<n;i++)order[i]=(unsigned)i;for(int i=n-1;i>0;i--){seed=mix32(seed+0x9e3779b9u);int j=(int)(seed%(unsigned)(i+1));unsigned tmp=order[i];order[i]=order[j];order[j]=tmp;}return (int)order[p];}return p;}
 static int source_index(const Lane *l,int position,double tick){return position<l->f[0]?(position-rotation_at(l,tick)+l->f[0])%l->f[0]:position;}
-/* Reserved parameter keys remain inert. */
+/* UNDO/REDO removed; published parameter keys remain inert below. */
 static void init_lane(Lane *l,int i){
  memset(l,0,sizeof *l);static const int old_hits[8]={4,2,11,3,4,5,1,3};
  int d[NF]={16,i<8?old_hits[i]:0,i==1?4:0,1,i==0?112:100,0,100,50,36+i,drum_notes[i],i,i<11?i:11,0,0};
@@ -56,7 +56,7 @@ static int evolution_set(Engine *e,const char *key,int v){Lane *l=&e->lane[e->se
   if(strcmp(target,"auto_rotate")&&strcmp(target,"sel_mute")&&strcmp(target,"sel_solo")){int li,fi;if(!parse_lane(target,&li,&fi)||fi<12)return 1;}
   if(get_param(e,target,buf,sizeof buf)>0&&integer(buf,&current)){snprintf(buf,sizeof buf,"%d",!current);set_param(e,target,buf);}return 1;
  }
- if(!strcmp(key,"edit_view")){if(e->edit_view==clampi(v,0,1))return 1;e->edit_view=clampi(v,0,1);e->q_valid=0;changed_selected(e);return 1;}
+ if(!strcmp(key,"edit_view")){if(e->edit_view==clampi(v,0,1))return 1;rand_clear(e);e->edit_view=clampi(v,0,1);e->q_valid=0;changed_selected(e);return 1;}
  if(!strcmp(key,"edit_tool")){if(e->edit_tool==clampi(v,0,1))return 1;e->edit_tool=clampi(v,0,1);changed_selected(e);return 1;}
  for(int f=1;f<5;f++)if(!strcmp(key,extra_keys[f+1])){int value=clampi(v,f==1||f==3?1:0,f==1?127:f==2?100:f==3?8:150);if(l->values[e->step][f]==value||(l->values[e->step][f]<0&&effective_value(l,e->step,f)==value))return 1;l->values[e->step][f]=value;changed_step(e,e->selected,e->step,f);return 1;}
  if(parse_step_key(key,&line,&step,&field)){int value=clampi(v,-1,field==0?1:field==1?127:field==2?100:field==3?8:150);if((field==1||field==3)&&value==0)value=1;if(e->lane[line].values[step][field]!=value){e->lane[line].values[step][field]=value;changed_step(e,line,step,field);}return 1;}
@@ -97,7 +97,7 @@ static int evolution_get(Engine *e,const char *key,char *b,int size){Lane *l=&e-
  else {for(int f=1;f<5;f++)if(!strcmp(key,extra_keys[f+1]))return snprintf(b,size,"%d",effective_value(l,e->step,f));for(int f=0;f<4;f++)if(!strcmp(key,extra_keys[f+6]))return snprintf(b,size,"%d",*play_field(l,f));return -1;}
  return snprintf(b,size,"%d",n);
 }
-/* PICN4 stores the complete sixteen-lane state and HOLD flags. */
+/* PICN4 appends sixteen HOLD flags; older PICN1/2/3 load with GATE. */
 static int write_evolution(Engine *e,char *b,int size){int off=0;
 #define PUT(...) do{int wrote=snprintf(b+off,size-off,__VA_ARGS__);if(wrote<0||wrote>=size-off)return 0;off+=wrote;}while(0)
  PUT("PICN4 %d %d %d %d %d %d %d 1 ",e->selected,e->mode,e->channel,e->bank,e->step,e->rhythm,e->row);

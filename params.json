@@ -33555,5 +33555,158 @@
     "default": 0,
     "display": "int",
     "poll": false
+  },
+  {
+    "key": "rand_mode",
+    "name": "RAND selection mode",
+    "min": 0,
+    "max": 1,
+    "default": 0,
+    "display": "int",
+    "poll": false
+  },
+  {
+    "key": "rand_pick0",
+    "name": "RAND selected parameter 1",
+    "min": 0,
+    "max": 1,
+    "default": 0,
+    "display": "int",
+    "poll": false
+  },
+  {
+    "key": "rand_pick1",
+    "name": "RAND selected parameter 2",
+    "min": 0,
+    "max": 1,
+    "default": 0,
+    "display": "int",
+    "poll": false
+  },
+  {
+    "key": "rand_pick2",
+    "name": "RAND selected parameter 3",
+    "min": 0,
+    "max": 1,
+    "default": 0,
+    "display": "int",
+    "poll": false
+  },
+  {
+    "key": "rand_pick3",
+    "name": "RAND selected parameter 4",
+    "min": 0,
+    "max": 1,
+    "default": 0,
+    "display": "int",
+    "poll": false
+  },
+  {
+    "key": "rand_pick4",
+    "name": "RAND selected parameter 5",
+    "min": 0,
+    "max": 1,
+    "default": 0,
+    "display": "int",
+    "poll": false
+  },
+  {
+    "key": "rand_pick5",
+    "name": "RAND selected parameter 6",
+    "min": 0,
+    "max": 1,
+    "default": 0,
+    "display": "int",
+    "poll": false
+  },
+  {
+    "key": "rand_pick6",
+    "name": "RAND selected parameter 7",
+    "min": 0,
+    "max": 1,
+    "default": 0,
+    "display": "int",
+    "poll": false
+  },
+  {
+    "key": "rand_pick7",
+    "name": "RAND selected parameter 8",
+    "min": 0,
+    "max": 1,
+    "default": 0,
+    "display": "int",
+    "poll": false
+  },
+  {
+    "key": "rand_toggle0",
+    "name": "Choose RAND parameter 1",
+    "min": 0,
+    "max": 1,
+    "default": 0,
+    "display": "int",
+    "momentary": true
+  },
+  {
+    "key": "rand_toggle1",
+    "name": "Choose RAND parameter 2",
+    "min": 0,
+    "max": 1,
+    "default": 0,
+    "display": "int",
+    "momentary": true
+  },
+  {
+    "key": "rand_toggle2",
+    "name": "Choose RAND parameter 3",
+    "min": 0,
+    "max": 1,
+    "default": 0,
+    "display": "int",
+    "momentary": true
+  },
+  {
+    "key": "rand_toggle3",
+    "name": "Choose RAND parameter 4",
+    "min": 0,
+    "max": 1,
+    "default": 0,
+    "display": "int",
+    "momentary": true
+  },
+  {
+    "key": "rand_toggle4",
+    "name": "Choose RAND parameter 5",
+    "min": 0,
+    "max": 1,
+    "default": 0,
+    "display": "int",
+    "momentary": true
+  },
+  {
+    "key": "rand_toggle5",
+    "name": "Choose RAND parameter 6",
+    "min": 0,
+    "max": 1,
+    "default": 0,
+    "display": "int",
+    "momentary": true
+  },
+  {
+    "key": "rand_toggle6",
+    "name": "Choose RAND parameter 7",
+    "min": 0,
+    "max": 1,
+    "default": 0,
+    "display": "int",
+    "momentary": true
+  },
+  {
+    "key": "rand_toggle7",
+    "name": "Choose RAND parameter 8",
+    "min": 0,
+    "max": 1,
+    "default": 0,
+    "display": "int",
+    "momentary": true
   }
 ]

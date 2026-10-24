@@ -18,7 +18,8 @@
 #define LEGACY_CHANGED (LANES*NF+19)
 #define SELECT16_ID (LEGACY_CHANGED+EXTRA_PARAMS)
 #define HOLD_ID (SELECT16_ID+1)
-#define CHANGED_COUNT (HOLD_ID+LANES)
+#define RAND_ID (HOLD_ID+LANES)
+#define CHANGED_COUNT (RAND_ID+9)
 #define VIS_LANE 288
 #define VIS_PREVIEW (VIS_LANE+LANES)
 #define VIS_CELL (VIS_PREVIEW+32)
@@ -42,6 +43,7 @@ typedef struct {double requested;int actual,line,step,view,lo,hi;} QMove;
 typedef struct {
  Lane lane[LANES];int selected,mode,channel,bank,step,rhythm,dialog,row,panic;
  int edit_view,edit_tool,state_valid;
+ int rand_mode,rand_line;unsigned rand_mask;
  QMove qmove[8];unsigned q_valid;
  unsigned revision,random,errors;int slot;
  snd_seq_t *seq;int port,queue;snd_seq_remove_events_t *rem;
@@ -66,6 +68,36 @@ static int note(Engine *e,int i){return e->lane[i].f[e->mode?9:8];}
 static int duplicates(Engine *e){for(int i=0;i<LANES;i++)for(int j=i+1;j<LANES;j++)if(note(e,i)==note(e,j))return 1;return 0;}
 /* Coalesced bounded queue: UI gestures publish their actual dependencies only. */
 static void notify_id(Engine *e,int id){if(id<0||id>=CHANGED_COUNT||e->queued[id])return;e->queued[id]=1;e->changed[e->change_write]=id;e->change_write=(e->change_write+1)%CHANGED_COUNT;e->changes++;}
+static void changed_lane(Engine *e,int line);
+/* Transient UI selection: never serialized, never a MIDI scheduling input. */
+static void rand_clear(Engine *e){e->rand_mode=0;e->rand_mask=0;e->q_valid=0;for(int j=0;j<9;j++)notify_id(e,RAND_ID+j);}
+static void rand_press(Engine *e){
+ if(e->edit_view){rand_clear(e);return;}
+ if(!e->rand_mode){e->rand_mode=1;e->rand_line=e->selected;e->rand_mask=0;e->q_valid=0;for(int j=0;j<9;j++)notify_id(e,RAND_ID+j);return;}
+ unsigned mask=e->rand_mask;
+ if(e->rand_line!=e->selected||!mask){rand_clear(e);return;}
+ Lane *l=&e->lane[e->selected];
+ static const int fields[8]={4,6,5,7,0,1,2,3};
+ int before[4];memcpy(before,l->f,sizeof before);
+ /* Preserve unselected HITS/ROTATE by constraining a new length. */
+ if(mask&(1u<<4)){
+  int lo=1;if(!(mask&(1u<<5))&&l->f[1]>lo)lo=l->f[1];
+  if(!(mask&(1u<<6))&&l->f[2]+1>lo)lo=l->f[2]+1;
+  l->f[0]=lo+(int)(rng(e)%(unsigned)(33-lo));
+ }
+ for(int q=0;q<8;q++)if(q!=4&&(mask&(1u<<q))){
+  int f=fields[q],lo=mins[f],hi=f==1?l->f[0]:f==2?l->f[0]-1:maxs[f];
+  l->f[f]=lo+(int)(rng(e)%(unsigned)(hi-lo+1));
+ }
+ int geometry=memcmp(before,l->f,3*sizeof(int))!=0;
+ if(geometry){
+  for(int k=0;k<32;k++){l->values[k][0]=-1;notify_id(e,LEGACY_CHANGED+14+LANES*4+e->selected*160+k*5);}
+  pattern(l);
+ }
+ if(memcmp(before,l->f,sizeof before))e->release_pending|=1u<<e->selected;
+ e->step=clampi(e->step,0,l->f[0]-1);
+ rand_clear(e);changed_lane(e,e->selected);
+}
 static void changed_selected(Engine *e){notify_id(e,SELECT16_ID);for(int id=LANES*NF;id<LEGACY_CHANGED+14;id++)notify_id(e,id);for(int q=0;q<8;q++)notify_id(e,LEGACY_CHANGED+14+LANES*4+LANES*160+q);e->revision++;}
 static void changed_lane(Engine *e,int line){for(int f=0;f<NF;f++)notify_id(e,line*NF+f);for(int f=0;f<4;f++)notify_id(e,LEGACY_CHANGED+14+line*4+f);changed_selected(e);}
 static void changed_step(Engine *e,int line,int step,int field){notify_id(e,LEGACY_CHANGED+14+LANES*4+line*160+step*5+field);changed_selected(e);}
@@ -169,14 +201,18 @@ static int read_state(Engine *e,const char *v){
  for(int i=8;i<LANES;i++)lanes[i].f[9]=drum_notes[nums[3]*16+i];
  e->selected=nums[0];e->mode=nums[1];e->channel=nums[2];e->bank=nums[3];e->step=nums[4];e->rhythm=nums[5];e->row=nums[6];memcpy(e->lane,lanes,sizeof lanes);e->dialog=0;e->panic=1;e->valid=0;changed_all(e);return 1;
 }
-static void set_param(void *inst,const char *key,const char *val){Engine *e=inst;if(!strcmp(key,"state")){e->state_valid=(!strncmp(val,"PICN2 ",6)||!strncmp(val,"PICN3 ",6)||!strncmp(val,"PICN4 ",6))?read_evolution(e,val):read_state(e,val);if(e->state_valid){e->q_valid=0;e->visual_ready=0;e->playing=0;for(int k=0;k<LANES;k++){e->reset_at[k]=-1;e->head[k]=-1;e->display_tick[k]=0;e->ui_offset[k]=0;}}return;}if(q_set(e,key,val))return;int v;if(!integer(val,&v))return;int i,j;
+static void set_param(void *inst,const char *key,const char *val){Engine *e=inst;if(!strcmp(key,"state")){e->state_valid=(!strncmp(val,"PICN2 ",6)||!strncmp(val,"PICN3 ",6)||!strncmp(val,"PICN4 ",6))?read_evolution(e,val):read_state(e,val);if(e->state_valid){rand_clear(e);e->q_valid=0;e->visual_ready=0;e->playing=0;for(int k=0;k<LANES;k++){e->reset_at[k]=-1;e->head[k]=-1;e->display_tick[k]=0;e->ui_offset[k]=0;}}return;}if(e->rand_mode&&key[0]=='q'&&key[1]>='0'&&key[1]<='7'&&!key[2])return;if(q_set(e,key,val))return;int v;if(!integer(val,&v))return;int i,j;
+ if(!strcmp(key,"rand_mode")||!strncmp(key,"rand_pick",9))return; /* read-only host echoes */
+ if(parse_suffix(key,"rand_toggle",8,&i)){if(v>0&&e->rand_mode&&e->rand_line==e->selected){e->rand_mask^=1u<<i;notify_id(e,RAND_ID+1+i);}return;}
+ if(!strcmp(key,"randomize")){if(v>0)rand_press(e);return;}
+ if(e->rand_mode&&(!strcmp(key,"half")||!strcmp(key,"double")||!strncmp(key,"sel_",4)))return;
  if(evolution_set(e,key,v))return;
  if(!strcmp(key,"choose_target")||!strcmp(key,"choose_bank")||!strcmp(key,"choose_sound")){
   int owned_dialog=!strcmp(key,"choose_target")?3:!strcmp(key,"choose_bank")?5:4;
   const char *target=owned_dialog==3?"target_mode":owned_dialog==5?"bank":"map_sound";
   set_param(inst,target,val);if(e->dialog==owned_dialog)e->dialog=0;changed_all(e);return;
  }
- if(!strcmp(key,"line")||!strcmp(key,"line_select")||!strcmp(key,"line_select16")){int top=!strcmp(key,"line_select16")?LANES-1:7;if(e->selected==clampi(v,0,top))return;e->q_valid=0;e->selected=clampi(v,0,top);e->step=clampi(e->step,0,e->lane[e->selected].f[0]-1);e->dialog=0;changed_selected(e);return;}
+ if(!strcmp(key,"line")||!strcmp(key,"line_select")||!strcmp(key,"line_select16")){int top=!strcmp(key,"line_select16")?LANES-1:7;if(e->selected==clampi(v,0,top))return;rand_clear(e);e->q_valid=0;e->selected=clampi(v,0,top);e->step=clampi(e->step,0,e->lane[e->selected].f[0]-1);e->dialog=0;changed_selected(e);return;}
  if(!strcmp(key,"target_mode")){if(e->mode==clampi(v,0,1))return;if(e->mode!=clampi(v,0,1))e->panic=1;e->mode=clampi(v,0,1);e->dialog=0;changed_selected(e);return;}
  if(!strcmp(key,"channel")){if(e->channel==clampi(v,0,15))return;e->panic=1;e->channel=clampi(v,0,15);changed_selected(e);return;}
  if(!strcmp(key,"bank")){if(e->bank==clampi(v,0,7))return;e->bank=clampi(v,0,7);for(int k=0;k<LANES;k++)e->lane[k].f[9]=drum_notes[e->bank*16+e->lane[k].f[10]];e->panic=1;e->dialog=0;changed_all(e);return;}
@@ -189,7 +225,7 @@ static void set_param(void *inst,const char *key,const char *val){Engine *e=inst
  /* Momentary actions fire only on the press. The wrapper's release must be a no-op. */
  if(v<=0)return;
  if(parse_suffix(key,"step_press",32,&i)){if(i>=e->lane[e->selected].f[0])return;int source=(i-e->ui_offset[e->selected]%e->lane[e->selected].f[0]+e->lane[e->selected].f[0])%e->lane[e->selected].f[0];if(source!=e->step){e->q_valid=0;}e->step=source;if(e->edit_view&&e->edit_tool){Lane *l=&e->lane[e->selected];l->values[e->step][0]=!effective_hit(l,e->step);changed_step(e,e->selected,e->step,0);}else changed_selected(e);return;}
- if(parse_suffix(key,"edit_line",LANES,&i)){e->q_valid=0;e->selected=i;e->step=clampi(e->step,0,e->lane[i].f[0]-1);e->dialog=0;changed_selected(e);return;}
+ if(parse_suffix(key,"edit_line",LANES,&i)){rand_clear(e);e->q_valid=0;e->selected=i;e->step=clampi(e->step,0,e->lane[i].f[0]-1);e->dialog=0;changed_selected(e);return;}
  if(parse_suffix(key,"open_sound",LANES,&i)){e->row=i;e->dialog=4;changed_all(e);return;}
  if(!strcmp(key,"open_rhythm")||!strcmp(key,"apply_rhythm"))return; /* retired IDs remain reserved */
  else if(!strcmp(key,"open_mapping"))e->dialog=2;
@@ -198,17 +234,19 @@ static void set_param(void *inst,const char *key,const char *val){Engine *e=inst
  else if(!strcmp(key,"close"))e->dialog=0;
 
  else if(!strcmp(key,"apply_mapping")){for(i=0;i<LANES;i++){e->lane[i].f[8]=36+i;e->lane[i].f[11]=i<11?i:11;}e->panic=1;e->dialog=0;}
- else if(!strcmp(key,"randomize")){Lane *l=&e->lane[e->selected];int old[4];memcpy(old,l->f,sizeof old);for(int attempts=0;attempts<8;attempts++){l->f[0]=1+(int)(rng(e)%32);l->f[1]=1+(int)(rng(e)%(unsigned)l->f[0]);l->f[2]=(int)(rng(e)%(unsigned)l->f[0]);l->f[3]=(int)(rng(e)%5);if(memcmp(old,l->f,sizeof old))break;if(attempts==7)l->f[3]=(l->f[3]+1)%5;}for(i=0;i<32;i++)l->values[i][0]=-1;e->step=clampi(e->step,0,l->f[0]-1);pattern(l);e->release_pending|=1u<<e->selected;}
+
  else if(!strcmp(key,"half")){e->lane[e->selected].f[3]=clampi(e->lane[e->selected].f[3]+1,0,4);e->release_pending|=1u<<e->selected;}
  else if(!strcmp(key,"double")){e->lane[e->selected].f[3]=clampi(e->lane[e->selected].f[3]-1,0,4);e->release_pending|=1u<<e->selected;}
  else return;
- if(!strcmp(key,"randomize")){for(int k=0;k<32;k++)notify_id(e,LEGACY_CHANGED+14+LANES*4+e->selected*160+k*5);changed_lane(e,e->selected);}
- else if(!strcmp(key,"half")||!strcmp(key,"double"))changed_lane(e,e->selected);
+ if(!strcmp(key,"half")||!strcmp(key,"double"))changed_lane(e,e->selected);
  else if(!strcmp(key,"apply_mapping")){for(int k=0;k<LANES;k++)changed_lane(e,k);}
  else changed_selected(e);
 }
 static int get_param(void *inst,const char *key,char *b,int size){Engine *e=inst;int n=-1,i,j;Lane *l=&e->lane[e->selected];
  if(size<=0)return 0;
+ if(!strcmp(key,"rand_mode"))return snprintf(b,size,"%d",e->rand_mode);
+ if(parse_suffix(key,"rand_pick",8,&i))return snprintf(b,size,"%d",e->rand_mode&&!!(e->rand_mask&(1u<<i)));
+ if(parse_suffix(key,"rand_toggle",8,&i)||!strcmp(key,"randomize"))return snprintf(b,size,"0");
  if(parse_suffix(key,"lane_flash",LANES,&i))return snprintf(b,size,"%d",e->visual_ready?e->visual_last[VIS_FLASH+i]:0);
  if(!strcmp(key,"state_valid"))return snprintf(b,size,"%d",e->state_valid);
  if(!strcmp(key,"state"))return write_evolution(e,b,size);
@@ -239,7 +277,8 @@ int mpc_engine_changed(void *inst,char *key,int len){
   /* Legacy selectors have an eight-lane normalized range. Do not publish
      their clamped mirror: a host echo could otherwise reselect lane 8. */
   if(k==LANES*NF+10||k==LANES*NF+16)continue;
-  if(k>=HOLD_ID){snprintf(key,len,"l%d_hold",k-HOLD_ID);}
+  if(k>=RAND_ID){if(k==RAND_ID)snprintf(key,len,"rand_mode");else snprintf(key,len,"rand_pick%d",k-RAND_ID-1);}
+  else if(k>=HOLD_ID){snprintf(key,len,"l%d_hold",k-HOLD_ID);}
   else if(k==SELECT16_ID){snprintf(key,len,"line_select16");}
   else if(k>=LEGACY_CHANGED){evolution_key(k-LEGACY_CHANGED,key,len);}
   else if(k<LANES*NF)snprintf(key,len,"l%d_%s",k/NF,field_names[k%NF]);

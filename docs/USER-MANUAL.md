@@ -1,6 +1,6 @@
 # πClideaN16 MPC — User Manual
 
-Version 1.1.4
+Version 1.2.0
 
 ## 1. Overview
 
@@ -45,7 +45,19 @@ Manual trigger edits take precedence over the generated pattern. Steps outside t
 
 MUTE silences the lane. SOLO limits playback to soloed lanes; multiple lanes can be soloed. Mute takes precedence over solo. Active buttons use amber.
 
-1/2 makes the lane run more slowly by moving to the next available division. x2 moves to the faster division. RAND changes the selected lane's Steps, Hits, Rotate and Division, and clears its manual trigger overrides. It keeps per-step expression settings. These actions are immediate.
+1/2 makes the lane run more slowly by moving to the next available division. x2 moves to the faster division.
+
+### Selective RAND
+
+- Press RAND once to enter selection mode. RAND turns green and italic, with a white square in its upper-right corner.
+- Tap any of the eight control areas to include or exclude that parameter. Included areas turn green. Touching them does not change their values.
+- Press RAND again to randomize only the selected parameters on the current lane. RAND and all selection indicators return to their normal appearance.
+- With no parameters selected, the second press closes selection without changing the lane.
+- Selection is cancelled when choosing another lane or changing LINE/EDIT mode. Selection is not stored in the project.
+- The 1/2 and x2 controls remain visible; their actions and contextual Q-Link editing are inactive during selection.
+
+Available targets: Velocity, Probability, Humanize, Gate, Steps, Hits, Rotate and Division. New Steps values respect unselected Hits and Rotate. Manual trigger overrides are cleared only when Steps, Hits or Rotate actually changes; per-step velocity, probability, ratchet and decay are retained. A random result may equal the previous value.
+
 
 ## 4. PATTERN — EDIT
 

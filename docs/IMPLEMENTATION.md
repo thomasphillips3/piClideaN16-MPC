@@ -18,7 +18,7 @@ An instance acquires a bounded unique slot. Its ALSA client, Out port and kernel
 
 ## Parameter model
 
-The model contains 3957 fixed indices. `params.lock` defines the public index order. New parameters must be appended; rebuilding fails if existing indices are changed. Some indices are reserved and remain in the model without visible controls.
+The model contains 3974 fixed indices. `params.lock` defines the public index order. New parameters must be appended; rebuilding fails if existing indices are changed. Some indices are reserved and remain in the model without visible controls.
 
 Canonical lane and step parameters have stable destinations for automation. Eight contextual Q-Link aliases resolve to the currently selected lane and step. Fractional Q-Link movement is retained when mapping to narrow integer ranges.
 
@@ -41,3 +41,7 @@ The source tree contains no firmware, sample library or proprietary instrument e
 ## Azure indicators
 
 Sixteen read-only lane_flash parameters publish playback activity. They are excluded from canonical automation and do not alter the PICN4 state. Each PATTERN lane selector retains its native selection binding, with normal and azure artwork variants selected by its activity indicator. The selected variant retains the white outline. There is no separate passive hit surface above the selection control.
+
+## Selective randomization
+
+RAND uses transient selection state and an eight-bit parameter mask. Seventeen appended non-automatable UI parameters expose mode, target indicators and touch actions. No new MIDI output, queue or scheduler is introduced. Selection is not serialized in PICN4.

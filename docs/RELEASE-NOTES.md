@@ -1,5 +1,5 @@
-# Version 1.1.4
+# Version 1.2.0
 
-Updated step indicators on both TRACKS pages to match the PATTERN palette: dark fills, red or purple outlines, and a light playhead outline. Removed dots from custom-step indicators. No explanatory legend is displayed in the plugin.
+Selective randomization: press RAND to select parameters, tap their control areas to include them in green, then press RAND again to apply. RAND uses italic green text and a white corner marker during selection. All selection indicators clear afterwards. The 1/2 and x2 controls remain in place.
 
-The MIDI engine, parameter indices and project state format are unchanged. Validated on Akai Force.
+The MIDI scheduler and PICN4 project state format are unchanged. Seventeen transient UI parameters are appended without moving existing indices. Only the selected lane and selected parameters are randomized. Validated on Akai Force.

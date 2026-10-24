@@ -76,6 +76,23 @@ def field(key,x,y,w,h,n=26):
   save(fn,im)
  parts=[child('Knob',dict(version=5,knobType='FilmStrip',filmStrip=fn,numFrames=127,invert=False,dragOrientation='Vertical',handleName='Data'),0,0,w,h),label(12,0,w-24,h,n)]
  k=local(f'field_{key}',parts,[action('Q-Link')],focus=True);return placed(k,key,x,y,w,h)
+def rand_button(x,y,w,h):
+ children=[]
+ for armed in [0,1]:
+  im,d=image(w,h,'#1a3324' if armed else C['panel'])
+  d.rounded_rectangle((1,1,w-2,h-2),radius=3,outline='#65bc7b' if armed else '#727d81')
+  if armed:
+   # Shear the glyph mask to italic without requiring an additional font file.
+   mask=Image.new('RGBA',(80,30),(0,0,0,0));md=ImageDraw.Draw(mask)
+   text(md,(8,0),'RAND',21,'#a0d8ad')
+   mask=mask.transform(mask.size,Image.Transform.AFFINE,(1,-.18,4,0,1,0),resample=Image.Resampling.BICUBIC)
+   im.paste(mask,((w-80)//2,(h-30)//2),mask)
+   d.rectangle((w-13,5,w-7,11),fill='#ffffff')
+  else:text(d,(w//2,h//2),'RAND',21,C['text'],'mm')
+  fn=f'rand_mode{armed}.png';save(fn,im)
+  c=art(fn,0,0,w,h);c['bounds']['additionalInvalidatingHandles']=[gate('rand_mode',armed,2)];children.append(c)
+ actions=[action('Toggle Switch'),dict(action('Toggle Switch'),onAction='Enter Pressed')]
+ return placed(local('rand_two_stage',children,actions,focus=True),'randomize',x,y,w,h)
 # Shared knob filmstrip, exact image/control geometry.
 im=Image.new('RGB',(58,58*128),C['oled']);dr=ImageDraw.Draw(im)
 for v in range(128):
@@ -99,8 +116,9 @@ for i in range(16):
  kind=local(tag,children,[action('Q-Link')]);parts.append(placed(kind,'line_select16',x,12+(i//8)*52,w,h))
 parts += [button('edit_view','LINE',20,394,148,46,False,0,2),button('edit_view','EDIT',176,394,148,46,False,1,2)]
 parts += [*toggle('sel_mute','MUTE',488,394,148,46),*toggle('sel_solo','SOLO',644,394,148,46)]
-for control in [button('half','1/2',800,394,148,46),button('double','x2',956,394,148,46),button('randomize','RAND',1112,394,148,46,native_touch=True)]:
- control['bounds']['additionalInvalidatingHandles'].append(gate('edit_view',0,2));parts.append(control)
+for control in [button('half','1/2',800,394,148,46),button('double','x2',956,394,148,46),rand_button(1112,394,148,46)]:
+ control['bounds']['additionalInvalidatingHandles'].append(gate('edit_view',0,2))
+ parts.append(control)
 parts += [button('edit_tool','SELECT',800,394,148,46,False,0,2,extra=[gate('edit_view',1,2)]),button('edit_tool','DRAW',956,394,148,46,False,1,2,extra=[gate('edit_view',1,2)]),button('erase_values','ERASE',1112,394,148,46,extra=[gate('edit_view',1,2)])]
 # Opaque display artwork, headers and four controls per scope.
 im,dr=image(1240,264,C['oled']);dr.rectangle((1,1,1238,262),outline='#68736a',width=2);dr.line((8,131,1230,131),fill='#68736a',width=1);save('scopes.png',im);parts.append(art('scopes.png',20,120,1240,264))
@@ -111,7 +129,26 @@ for view,keys in [(0,['sel_'+k for k in ['velocity','prob','humanize','gate','st
  for n,key in enumerate(keys):
   x=30+(n%4)*309;y=151+(n//4)*132
   children=[art('parameter_box.png',0,0,299,94),child('Knob',dict(version=5,knobType='FilmStrip',filmStrip='dial.png',numFrames=127,invert=False,dragOrientation='Vertical',handleName='Data'),9,19,58,58),label(82,0,210,27,20,kind='Name'),label(82,27,200,40,34)]
-  kind=local(f'knob_v{view}_{n}',children,[action('Q-Link')],focus=True);parts.append(placed(kind,key,x,y,299,94,[gate('edit_view',view,2)]))
+  kind=local(f'knob_v{view}_{n}',children,[action('Q-Link')],focus=True)
+  conditions=[gate('edit_view',view,2)]+([gate('rand_mode',0,2)] if not view else [])
+  parts.append(placed(kind,key,x,y,299,94,conditions))
+  if not view:
+   # Mutually exclusive sibling: exactly one touch owner at any given time.
+   picked=[]
+   for chosen in [0,1]:
+    im,d=image(299,94,'#1a3324' if chosen else C['oled'])
+    d.rectangle((1,1,297,92),outline='#65bc7b' if chosen else '#68736a',width=2 if chosen else 1)
+    fn=f'rand_pick_box{chosen}.png';save(fn,im)
+    c=art(fn,0,0,299,94);c['bounds']['additionalInvalidatingHandles']=[gate(f'rand_pick{n}',chosen,2)];picked.append(c)
+   # Static dial: selecting a target never edits its value or turns a knob.
+   # Opaque dial uses the same surface as its enclosing state.
+   for chosen in [0,1]:
+    im,d=image(58,58,'#1a3324' if chosen else C['oled']);d.ellipse((4,4,54,54),outline='#a0d8ad' if chosen else C['text']);d.line((29,29,39,12),fill='#a0d8ad' if chosen else C['text'],width=2)
+    fn=f'rand_dial{chosen}.png';save(fn,im);c=art(fn,9,19,58,58);c['bounds']['additionalInvalidatingHandles']=[gate(f'rand_pick{n}',chosen,2)];picked.append(c)
+   picked += [label(82,0,210,27,20,handle='Value',kind='Name'),label(82,27,200,40,34,handle='Value')]
+   actions=[action('Toggle Switch'),dict(action('Toggle Switch'),onAction='Enter Pressed')]
+   k=local(f'rand_target{n}',picked,actions,focus=True)
+   parts.append(placed(k,f'rand_toggle{n}',x,y,299,94,[gate('edit_view',0,2),gate('rand_mode',1,2)],maps=[{'key':'Value','value':f'Parameter {I[key]}'}]))
   if view and n>=4:
    im,d=image(10,10,C['text']);fn='custom_square.png';save(fn,im);c=art(fn,x+282,y+6,10,10);c['bounds']['additionalInvalidatingHandles']=[gate('edit_view',1,2),gate(f'step_custom{n-4}',1,2)];parts.append(c)
 # Each pad has ONE native touch owner containing its passive state artwork.
