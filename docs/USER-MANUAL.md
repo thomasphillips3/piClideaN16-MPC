@@ -49,6 +49,10 @@ MUTE silences the lane. SOLO limits playback to soloed lanes; multiple lanes can
 
 ### Selective RAND
 
+![Selective RAND on Akai Force: HITS and DIVISION selected on lane A07](images/rand-selection-force-1.2.0.png)
+
+In this example, lane A07 is active and only HITS and DIVISION are selected in green. Pressing RAND again randomizes those two settings. The other six lane controls keep their values. The small white square on RAND indicates selection mode; a white outline around a control indicates focus, not an additional randomization target.
+
 - Press RAND once to enter selection mode. RAND turns green and italic, with a white square in its upper-right corner.
 - Tap any of the eight control areas to include or exclude that parameter. Included areas turn green. Touching them does not change their values.
 - Press RAND again to randomize only the selected parameters on the current lane. RAND and all selection indicators return to their normal appearance.
