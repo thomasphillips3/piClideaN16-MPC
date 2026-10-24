@@ -22,6 +22,16 @@ Build evolving drum patterns with sixteen independent lanes, per-step expression
 
 The plugin generates MIDI only. Use a separate Drum Track or drum instrument to produce sound. 
 
+## Screenshots
+
+### Tracks — pattern overview and playback controls
+
+![TRACKS on Akai Force: step indicators, mute, solo and automatic rotation](docs/images/tracks-force-1.1.4.png)
+
+### Setup — pad mapping and GATE / HOLD
+
+![SETUP on Akai Force: Drum Track routing, MIDI notes and per-lane GATE / HOLD](docs/images/setup-force-1.1.4.png)
+
 ## Download and setup
 
 Install [piClideaN-MPC-1.1.4-armv7.zip](Installation/piClideaN-MPC-1.1.4-armv7.zip) with a compatible portable-package installer. See [Installation and removal](docs/INSTALLATION.md).
