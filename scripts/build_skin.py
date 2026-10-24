@@ -136,7 +136,18 @@ for i in range(32):
 
 # TRACKS previews use small static tiles, never short filmstrips.
 for state in range(9):
- im,dr=image(12,22);dr.rectangle((1,3,10,18),fill=C['text'] if state<8 and state&2 else '#b552bf' if state<8 and state&4 else C['red'] if state&1 else '#242b2f' if state==8 else '#424b50');save(f'tiny_state{state}.png',im)
+ # Miniature PATTERN tiles: preserve all nine existing state values and geometry.
+ # Playback outlines the tile without hiding its note/custom colour.
+ outside=state==8
+ active=not outside and bool(state&1)
+ custom=not outside and bool(state&4)
+ head=not outside and bool(state&2)
+ bg='#1c2025' if outside else '#432449' if custom else '#352329' if active else C['panel']
+ edge='#292e34' if outside else '#88518e' if custom else '#a9434c' if active else '#485057'
+ im,dr=image(12,22)
+ dr.rectangle((1,3,10,18),fill=bg,outline=edge)
+ if head:dr.rectangle((0,2,11,19),outline=C['text'])
+ save(f'tiny_state{state}.png',im)
 track_pages=[]
 for start in [0,8]:
  im,dr=image(1280,628);text(dr,(24,16),f'TRACKS / {start+1:02}–{start+8:02}',28)

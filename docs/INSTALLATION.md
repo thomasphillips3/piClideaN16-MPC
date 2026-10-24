@@ -12,7 +12,7 @@ The package contains regular files, requires no symbolic links and can be stored
 
 1. Save the current project before allowing an installer to restart MPC.
 2. Open the installer's local ZIP installation page.
-3. Select `piClideaN-MPC-1.1.3-armv7.zip` from `Installation/`.
+3. Select `piClideaN-MPC-1.1.4-armv7.zip` from `Installation/`.
 4. Select **User memory / Synths** or the available **SSD / Synths** destination.
 5. Review the destination and complete the installation. Allow the requested MPC restart after saving.
 6. Create a Plugin Track and select **πClideaN MPC**.
