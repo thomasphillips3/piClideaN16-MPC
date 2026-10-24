@@ -138,7 +138,18 @@ RESET PHASE requests a fresh phase at the next step boundary while playing. CYCL
 
 ## 6. SET pages — GATE / HOLD
 
-Each lane has a GATE / HOLD button before SOUND / PAD. GATE is the default.
+Each lane has a GATE / HOLD button in the MODE column, immediately before SOUND / PAD. It is available in both SET 01–08 and SET 09–16 and affects only that lane.
+
+### Using the GATE / HOLD button
+
+- **GATE — normal dark button:** the default mode. Each played note is released automatically after the duration set by the GATE knob on PATTERN. Use this when notes should have a defined, usually short duration.
+- **Tap GATE:** the button changes to **HOLD** with an amber background. Each note remains held until the next effective trigger on the same lane. The previous note is released before the new note starts. Use this for a longer sample or sustained sound that should continue between hits.
+- **Tap HOLD:** the button returns to **GATE** and its normal dark appearance. The lane uses the GATE knob again. Switching modes releases the currently owned note; the new mode applies to subsequent triggers.
+
+For example, set lane A13 to HOLD to let a long sound continue across empty steps until A13 triggers again. A note played on another lane does not release A13. A rest or a trigger rejected by probability does not end the held note. The sample must still be long enough, and the target must respond appropriately to Note Off.
+
+The SET button selects the **note-duration mode**; the PATTERN knob sets the **duration percentage used in GATE mode**. These are two different controls. Each lane can use a different mode, and the choices are saved with the Force project.
+
 
 GATE sends a Note Off after the calculated gate length. HOLD sustains the note until the next effective trigger on that lane. It releases the previous note before sending the next Note On.
 

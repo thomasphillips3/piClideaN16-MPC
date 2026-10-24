@@ -93,7 +93,15 @@
 <p>AUTO ROTATE shifts the pattern content after the chosen number of complete lane cycles. SHIFT is -8 to +8 steps; EVERY is 1–16 cycles. A cycle is based on the playback mode, not necessarily a Force bar. Per-step values move with their triggers. PATTERN and TR show the same rotating content.</p>
 <p>RESET PHASE requests a fresh phase at the next step boundary while playing. CYCLE and SHIFT display the current phase. The selected step follows its stored data when rotation moves it to another visible position.</p>
 <h2>6. SET pages — GATE / HOLD</h2>
-<p>Each lane has a GATE / HOLD button before SOUND / PAD. GATE is the default.</p>
+<p>Each lane has a GATE / HOLD button in the MODE column, immediately before SOUND / PAD. It is available in both SET 01–08 and SET 09–16 and affects only that lane.</p>
+<h3>Using the GATE / HOLD button</h3>
+<ul>
+<li><strong>GATE — normal dark button:</strong> the default mode. Each played note is released automatically after the duration set by the GATE knob on PATTERN. Use this when notes should have a defined, usually short duration.</li>
+<li><strong>Tap GATE:</strong> the button changes to <strong>HOLD</strong> with an amber background. Each note remains held until the next effective trigger on the same lane. The previous note is released before the new note starts. Use this for a longer sample or sustained sound that should continue between hits.</li>
+<li><strong>Tap HOLD:</strong> the button returns to <strong>GATE</strong> and its normal dark appearance. The lane uses the GATE knob again. Switching modes releases the currently owned note; the new mode applies to subsequent triggers.</li>
+</ul>
+<p>For example, set lane A13 to HOLD to let a long sound continue across empty steps until A13 triggers again. A note played on another lane does not release A13. A rest or a trigger rejected by probability does not end the held note. The sample must still be long enough, and the target must respond appropriately to Note Off.</p>
+<p>The SET button selects the <strong>note-duration mode</strong>; the PATTERN knob sets the <strong>duration percentage used in GATE mode</strong>. These are two different controls. Each lane can use a different mode, and the choices are saved with the Force project.</p>
 <p>GATE sends a Note Off after the calculated gate length. HOLD sustains the note until the next effective trigger on that lane. It releases the previous note before sending the next Note On.</p>
 <ul>
 <li>Rests and probability-rejected triggers leave a held note playing.</li>
