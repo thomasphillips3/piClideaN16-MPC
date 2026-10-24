@@ -103,7 +103,9 @@ The A01–A16 buttons briefly illuminate in azure when their scheduled Note On r
 
 Muted lanes, solo-excluded lanes, rests and rejected probability decisions do not flash. Ratchets contribute to the pulses; rapid repeats can merge visually. HOLD indicates retriggers, not the duration of the sustained note. Each impulse lasts approximately 140 ms, subject to the native screen refresh cadence. It indicates emitted MIDI activity rather than measured audio from the target.
 
-![Azure lane activity](images/activity.png)
+![Live lane activity on Akai Force: A03 flashes in azure while A13 remains selected](images/activity.png)
+
+In this capture, A03 flashes in azure because it has triggered a note, while A13 remains selected with its white outline. The displayed pattern and controls belong to A13: lane activity feedback does not change the selected lane.
 
 ### Colors
 
