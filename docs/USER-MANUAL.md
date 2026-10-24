@@ -47,6 +47,21 @@ MUTE silences the lane. SOLO limits playback to soloed lanes; multiple lanes can
 
 1/2 makes the lane run more slowly by moving to the next available division. x2 moves to the faster division.
 
+### Gate length — how long a MIDI note stays held
+
+The GATE knob in the upper LINE row controls the time between each Note On and its Note Off when that lane is in GATE mode on the SET page. Its range is 10–95 percent of one step duration. This is a MIDI note duration, not a volume control or a sample-length setting.
+
+- Lower values release the note sooner: useful for short, detached hits when the target responds to Note Off.
+- Higher values hold the note longer, up to 95 percent of the step duration.
+- At 120 BPM with DIVISION set to 1/16, a step lasts 125 ms. GATE 50 sends Note Off about 62.5 ms after Note On; GATE 10 gives about 12.5 ms, and GATE 95 about 118.75 ms.
+- With RATCHET, the percentage applies to each repetition's subdivision. At the same tempo and division, RATCHET 4 divides the step into four 31.25 ms intervals; GATE 50 gives each note about 15.625 ms before its Note Off.
+
+The GATE value applies to the entire lane, including steps with their own velocity, probability or ratchet settings. It does not fill rests or wait for the next active step. Note durations can be shortened at a host loop boundary.
+
+The audible effect depends on the target instrument's playback mode and envelope. A One Shot sample may play to its end regardless of Note Off. A gated sample or synthesizer may begin its release stage on Note Off, so its sound can continue after the MIDI note is released. GATE cannot stretch a sample or make it longer than its natural playback.
+
+To hold a note until the next effective trigger on the lane, use HOLD on the SET page. In HOLD mode, the GATE knob's value remains stored but does not determine the note's duration. See **SET pages — GATE / HOLD** below.
+
 ### Selective RAND
 
 ![Selective RAND on Akai Force: HITS and DIVISION selected on lane A07](images/rand-selection-force-1.2.0.png)
