@@ -23,7 +23,7 @@ DRUM TRACK is the default target. Bank A provides notes 36–51 as the initial s
 
 ## 3. PATTERN — LINE
 
-![PATTERN — LINE mode captured on Akai Force](images/pattern-line.png)
+![PATTERN LINE — lane A05 selected, rounded controls on Akai Force](images/pattern-line-force-1.2.2.png)
 
 Choose a lane with A01–A16, then choose LINE.
 
@@ -80,7 +80,7 @@ Available targets: Velocity, Probability, Humanize, Gate, Steps, Hits, Rotate an
 
 ## 4. PATTERN — EDIT
 
-![PATTERN — EDIT mode captured on Akai Force](images/pattern-edit.png)
+![PATTERN EDIT — lane A03, dimmed LINE references and custom STEP values](images/pattern-edit-force-1.2.2.png)
 
 In EDIT, the upper LINE row is dimmed and shows the lane defaults as read-only references. Touch, the data wheel and Q1–Q4 cannot edit these four controls. Return to LINE to change them. Existing host automation of canonical lane parameters continues to run. The lower STEP row remains active and edits the selected step:
 
@@ -94,6 +94,10 @@ A small dot marks a custom step value. Without a custom value, velocity and prob
 ### Select, draw and erase
 
 SELECT touches a step without changing its trigger. DRAW toggles its trigger on each touch. Changing expression does not create a trigger.
+
+![EDIT SELECT — lane A07 and step 09 selected, with a white step outline](images/pattern-select-force-1.2.2.png)
+
+Here, A07 is the selected lane and the white outline identifies step 09. LINE remains dimmed; STEP shows the selected step’s values. Without custom overrides, velocity and probability follow the lane and their custom-value dots are absent. Selecting the step does not alter its trigger.
 
 In SELECT, ERASE clears the selected step's custom expression values while retaining its trigger. In DRAW, ERASE removes its trigger while retaining its expression settings. Changes are immediate; there is no undo history.
 
@@ -122,7 +126,7 @@ A violet rest remains silent until its trigger is enabled. A custom value can eq
 
 ## 5. TR pages — playback and rotation
 
-![TRACKS on Akai Force: lane A07 selected, lane A03 muted, automatic rotation enabled](images/tracks-force-1.2.0.png)
+![TR 01–08 on Akai Force: lane A07 selected and AUTO ROTATE enabled](images/tracks-force-1.2.2.png)
 
 TR 01-08 and TR 09-16 show eight lanes each. Tap A01–A16 to select a lane; its button gains a white outline and the controls on the right follow that lane. In the screenshot, A07 is selected.
 
