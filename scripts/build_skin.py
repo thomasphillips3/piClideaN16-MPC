@@ -13,6 +13,9 @@ z=zipfile.ZipFile(B/'reference/skin-base.zip');assert hashlib.sha256((B/'referen
 J=json.loads(z.read('Plugin Skins/TUI.json'));D=J['pageData'];D['componentDefinitions']['localComponentDefinitions']=[];defs=D['componentDefinitions']['localComponentDefinitions']
 C={'bg':'#171a1e','panel':'#252b31','oled':'#111b18','text':'#e8e5d0','muted':'#b4bcba','red':'#f2474d','amber_bg':'#342e22','amber_text':'#c5ac78','amber_edge':'#8b7854'}
 READ_ONLY_TEXT='#6b756f'
+CORNER_RADIUS=10  # Native 1280px coordinates; artwork only, hit areas unchanged.
+def rounded(d,box,fill=None,outline=None,width=1,radius=CORNER_RADIUS):
+ d.rounded_rectangle(box,radius=radius,fill=fill,outline=outline,width=width)
 @lru_cache(maxsize=32)
 def font(n):return ImageFont.truetype(str(B/'reference/fonts/TitilliumWeb-Regular.ttf'),n)
 def text(d,xy,t,n=23,c=None,anchor=None):d.text(xy,t,font=font(n),fill=c or C['text'],anchor=anchor)
@@ -26,7 +29,11 @@ def local(name,children,actions=None,focus=False):
  clear={'version':1,'colour':'0','image':''};v=dict(version=4,actions=actions or [],backgroundData=dict(version=1,focussed=clear,unfocussed=clear),ignoreMousePresses=not bool(actions),disableCoarseDataWheel=False,repeats=1,hideQLinkBounds=True,componentsData=children)
  if focus:
   boxes=[list(map(int,c['bounds']['bounds'].split())) for c in children];w=max(x+cw for x,y,cw,ch in boxes);h=max(y+ch for x,y,cw,ch in boxes)
-  c=child('Focus',dict(version=1,backgroundColour='00000000',outlineColour='ffffffff',backgroundInset=2.,outlineThickness=2.),0,0,w,h);c['bounds']['whenVisible']='WhenFocussed';c['bounds']['acceptsHWFocus']='No';children.append(c)
+  # Passive transparent focus artwork: retain native focus visibility and actions.
+  fn=f'focus_rounded_{w}_{h}.png'
+  if not (A/fn).exists():
+   im=Image.new('RGBA',(w,h),(0,0,0,0));rounded(ImageDraw.Draw(im),(2,2,w-3,h-3),outline='#ffffff',width=2);save(fn,im)
+  c=art(fn,0,0,w,h);c['componentData']['name']='Focus';c['bounds']['whenVisible']='WhenFocussed';children.append(c)
  defs.append({'key':name,'value':v});return name
 def placed(kind,key,x,y,w,h,extra=None,maps=None):
  c=child(kind,dict(version=1,handleName='Data'),x,y,w,h,key);c['handle remapping']['map']=[{'key':'Data','value':f'Parameter {I[key]}'}]+(maps or []);c['bounds']['additionalInvalidatingHandles']=extra or [];return c
@@ -40,7 +47,7 @@ def readout(key,x,y,w,h,n=24):
 def button(key,title,x,y,w,h,momentary=True,id=1,count=2,extra=None,tag=None,native_touch=False):
  tag=tag or f'btn_{key}_{x}_{y}_{id}'
  for state in [0,1]:
-  im,d=image(w,h,C['amber_bg'] if state else C['panel']);d.rounded_rectangle((1,1,w-2,h-2),radius=3,outline=C['amber_edge'] if state else '#727d81');text(d,(w//2,h//2),title,21,C['amber_text'] if state else C['text'],'mm');save(tag+f'_{state}.png',im)
+  im,d=image(w,h);rounded(d,(1,1,w-2,h-2),fill=C['amber_bg'] if state else C['panel'],outline=C['amber_edge'] if state else '#727d81');text(d,(w//2,h//2),title,21,C['amber_text'] if state else C['text'],'mm');save(tag+f'_{state}.png',im)
  if native_touch:
   # A single touch owner, matching the working step-pad triggers. A nested
   # Momentary Button can retain its pressed gesture until focus moves away.
@@ -55,7 +62,7 @@ def button(key,title,x,y,w,h,momentary=True,id=1,count=2,extra=None,tag=None,nat
   k=local(tag,[child('Button',dict(version=2,onImage=tag+'_1.png',offImage=tag+'_0.png',buttonId=id,numButtonsInGroup=count,handleName='Data',gestureBehaviour='Momentary' if momentary else 'Instant'),0,0,w,h)],[action('Q-Link'),dict(action('Toggle Switch'),onAction='Enter Pressed')],focus=True)
  if not momentary:
   for element in defs[-1]['value']['componentsData']:
-   if element['componentData']['type']=='Focus':element['bounds']['additionalInvalidatingHandles']=[gate(key,id,count)]
+   if element['componentData']['name']=='Focus':element['bounds']['additionalInvalidatingHandles']=[gate(key,id,count)]
  return placed(k,key,x,y,w,h,extra)
 def toggle(key,title,x,y,w,h):
  # One native Toggle Switch owns touch/Enter and binds the actual state.
@@ -63,7 +70,7 @@ def toggle(key,title,x,y,w,h):
  children=[]
  for current in [0,1]:
   tag=f'toggle_{key}_{x}_{y}_{current}'
-  im,d=image(w,h,C['amber_bg'] if current else C['panel']);d.rounded_rectangle((1,1,w-2,h-2),radius=3,outline=C['amber_edge'] if current else '#727d81')
+  im,d=image(w,h);rounded(d,(1,1,w-2,h-2),fill=C['amber_bg'] if current else C['panel'],outline=C['amber_edge'] if current else '#727d81')
   caption=('HOLD' if current else 'GATE') if key.endswith('_hold') else title+(' ON' if current else ' OFF') if key=='auto_rotate' else title
   text(d,(w//2,h//2),caption,21,C['amber_text'] if current else C['text'],'mm');save(tag+'.png',im)
   c=art(tag+'.png',0,0,w,h);c['bounds']['additionalInvalidatingHandles']=[gate(key,current,2)];children.append(c)
@@ -72,23 +79,23 @@ def toggle(key,title,x,y,w,h):
 def field(key,x,y,w,h,n=26):
  tag=f'field_{w}_{h}';fn=tag+'.png'
  if not (A/fn).exists():
-  im=Image.new('RGB',(w,h*128),C['panel']);dr=ImageDraw.Draw(im)
-  for f in range(128):dr.rectangle((1,f*h+1,w-2,(f+1)*h-2),outline='#727d81')
+  im=Image.new('RGB',(w,h*128),C['bg']);dr=ImageDraw.Draw(im)
+  for f in range(128):rounded(dr,(1,f*h+1,w-2,(f+1)*h-2),fill=C['panel'],outline='#727d81')
   save(fn,im)
  parts=[child('Knob',dict(version=5,knobType='FilmStrip',filmStrip=fn,numFrames=127,invert=False,dragOrientation='Vertical',handleName='Data'),0,0,w,h),label(12,0,w-24,h,n)]
  k=local(f'field_{key}',parts,[action('Q-Link')],focus=True);return placed(k,key,x,y,w,h)
 def rand_button(x,y,w,h):
  children=[]
  for armed in [0,1]:
-  im,d=image(w,h,'#1a3324' if armed else C['panel'])
-  d.rounded_rectangle((1,1,w-2,h-2),radius=3,outline='#65bc7b' if armed else '#727d81')
+  im,d=image(w,h)
+  rounded(d,(1,1,w-2,h-2),fill='#1a3324' if armed else C['panel'],outline='#65bc7b' if armed else '#727d81')
   if armed:
    # Shear the glyph mask to italic without requiring an additional font file.
    mask=Image.new('RGBA',(80,30),(0,0,0,0));md=ImageDraw.Draw(mask)
    text(md,(8,0),'RAND',21,'#a0d8ad')
    mask=mask.transform(mask.size,Image.Transform.AFFINE,(1,-.18,4,0,1,0),resample=Image.Resampling.BICUBIC)
    im.paste(mask,((w-80)//2,(h-30)//2),mask)
-   d.rectangle((w-13,5,w-7,11),fill='#ffffff')
+   d.ellipse((w-17,9,w-13,13),fill='#ffffff')
   else:text(d,(w//2,h//2),'RAND',21,C['text'],'mm')
   fn=f'rand_mode{armed}.png';save(fn,im)
   c=art(fn,0,0,w,h);c['bounds']['additionalInvalidatingHandles']=[gate('rand_mode',armed,2)];children.append(c)
@@ -115,7 +122,7 @@ for i in range(16):
    bg=('#2b2529' if selected else '#1b2023') if muted else '#203c49' if flash else '#352329' if selected else C['panel']
    ink=('#ad747b' if selected else '#858d91') if muted else '#91c9df' if flash else C['red'] if selected else C['text']
    edge='#ffffff' if selected else '#333b40' if muted else '#5b9cb7' if flash else '#485057'
-   im,d=image(w,h,bg);d.rectangle((1,1,w-2,h-2),outline=edge,width=2 if selected else 1)
+   im,d=image(w,h);rounded(d,(1,1,w-2,h-2),fill=bg,outline=edge,width=2 if selected else 1)
    text(d,(w//2,h//2),f'A{i+1:02}',24,ink,'mm');save(tag+f'_m{muted}_f{flash}_{selected}.png',im)
   native=child('Button',dict(version=2,onImage=tag+f'_m{muted}_f{flash}_1.png',offImage=tag+f'_m{muted}_f{flash}_0.png',buttonId=i,numButtonsInGroup=16,handleName='Data',gestureBehaviour='Instant'),0,0,w,h)
   conditions=[gate(f'l{i}_mute',muted,2)]
@@ -129,9 +136,9 @@ for control in [button('half','1/2',800,394,148,46),button('double','x2',956,394
  parts.append(control)
 parts += [button('edit_tool','SELECT',800,394,148,46,False,0,2,extra=[gate('edit_view',1,2)]),button('edit_tool','DRAW',956,394,148,46,False,1,2,extra=[gate('edit_view',1,2)]),button('erase_values','ERASE',1112,394,148,46,extra=[gate('edit_view',1,2)])]
 # Opaque display artwork, headers and four controls per scope.
-im,dr=image(1240,264,C['oled']);dr.rectangle((1,1,1238,262),outline='#68736a',width=2);dr.line((8,131,1230,131),fill='#68736a',width=1);save('scopes.png',im);parts.append(art('scopes.png',20,120,1240,264))
-im,d=image(299,94,C['oled']);d.rectangle((1,1,297,92),outline='#68736a');save('parameter_box.png',im)
-im,d=image(299,94,C['oled']);d.rectangle((1,1,297,92),outline='#303f36');save('parameter_box_read_only.png',im)
+im,dr=image(1240,264);rounded(dr,(1,1,1238,262),fill=C['oled'],outline='#68736a',width=2,radius=12);dr.line((8,131,1230,131),fill='#68736a',width=1);save('scopes.png',im);parts.append(art('scopes.png',20,120,1240,264))
+im,d=image(299,94,C['oled']);rounded(d,(1,1,297,92),outline='#68736a');save('parameter_box.png',im)
+im,d=image(299,94,C['oled']);rounded(d,(1,1,297,92),outline='#303f36');save('parameter_box_read_only.png',im)
 for view,keys in [(0,['sel_'+k for k in ['velocity','prob','humanize','gate','steps','hits','rotate','division']]),(1,['sel_velocity','sel_prob','sel_humanize','sel_gate','step_velocity','step_prob','step_ratchet','step_decay'])]:
  for title,y in [('LINE',120),('STEP' if view else 'STEPS',252)]:
   im,d=image(720,26,C['oled']);text(d,(0,0),title,20,READ_ONLY_TEXT if view and y==120 else C['text']);fn=f'scope_v{view}_{y}.png';save(fn,im);c=art(fn,34,y+4,720,26);c['bounds']['additionalInvalidatingHandles']=[gate('edit_view',view,2)];parts.append(c)
@@ -151,8 +158,8 @@ for view,keys in [(0,['sel_'+k for k in ['velocity','prob','humanize','gate','st
    # Mutually exclusive sibling: exactly one touch owner at any given time.
    picked=[]
    for chosen in [0,1]:
-    im,d=image(299,94,'#1a3324' if chosen else C['oled'])
-    d.rectangle((1,1,297,92),outline='#65bc7b' if chosen else '#68736a',width=2 if chosen else 1)
+    im,d=image(299,94,C['oled'])
+    rounded(d,(1,1,297,92),fill='#1a3324' if chosen else C['oled'],outline='#65bc7b' if chosen else '#68736a',width=2 if chosen else 1)
     fn=f'rand_pick_box{chosen}.png';save(fn,im)
     c=art(fn,0,0,299,94);c['bounds']['additionalInvalidatingHandles']=[gate(f'rand_pick{n}',chosen,2)];picked.append(c)
    # Static dial: selecting a target never edits its value or turns a knob.
@@ -165,7 +172,7 @@ for view,keys in [(0,['sel_'+k for k in ['velocity','prob','humanize','gate','st
    k=local(f'rand_target{n}',picked,actions,focus=True)
    parts.append(placed(k,f'rand_toggle{n}',x,y,299,94,[gate('edit_view',0,2),gate('rand_mode',1,2)],maps=[{'key':'Value','value':f'Parameter {I[key]}'}]))
   if view and n>=4:
-   im,d=image(10,10,C['text']);fn='custom_square.png';save(fn,im);c=art(fn,x+282,y+6,10,10);c['bounds']['additionalInvalidatingHandles']=[gate('edit_view',1,2),gate(f'step_custom{n-4}',1,2)];parts.append(c)
+   im=Image.new('RGBA',(10,10),(0,0,0,0));d=ImageDraw.Draw(im);d.ellipse((2,2,7,7),fill=C['text']);fn='custom_dot.png';save(fn,im);c=art(fn,x+277,y+10,10,10);c['bounds']['additionalInvalidatingHandles']=[gate('edit_view',1,2),gate(f'step_custom{n-4}',1,2)];parts.append(c)
 # Each pad has ONE native touch owner containing its passive state artwork.
 # A sibling display above a separate Button can intercept physical touch on MPC.
 for i in range(32):
@@ -174,9 +181,9 @@ for i in range(32):
  for state in range(18):
   outside=state>=16;active=not outside and state&1;selected=(not outside and state&2) or state==17;head=not outside and state&4;custom=not outside and state&8
   bg='#432449' if custom else '#352329' if active else C['panel'];ink='#d780e0' if custom else C['red'] if active else '#555e62' if outside else '#a5adaa'
-  im,d=image(w,h,bg);d.rectangle((1,1,w-2,h-2),outline='#ffffff' if selected else '#88518e' if custom else '#485057',width=2 if selected else 1)
-  if head:d.rectangle((4,4,w-5,h-5),outline=C['red'],width=3)
-  if custom:d.rectangle((w-12,5,w-7,10),fill=C['text'])
+  im,d=image(w,h);rounded(d,(1,1,w-2,h-2),fill=bg,outline='#ffffff' if selected else '#88518e' if custom else '#485057',width=2 if selected else 1)
+  if head:rounded(d,(4,4,w-5,h-5),outline=C['red'],width=3,radius=7)
+  if custom:d.ellipse((w-17,10,w-13,14),fill=C['text'])
   text(d,(w//2,h//2),f'{i+1:02}',24,ink,'mm');fn=f'step{i}_state{state}.png';save(fn,im)
   c=art(fn,0,0,w,h);c['bounds']['additionalInvalidatingHandles']=[gate(f'editcell{i}',state,18)];
   states.append(c)
@@ -197,8 +204,8 @@ for state in range(9):
  bg='#1c2025' if outside else '#432449' if custom else '#352329' if active else C['panel']
  edge='#292e34' if outside else '#88518e' if custom else '#a9434c' if active else '#485057'
  im,dr=image(12,22)
- dr.rectangle((1,3,10,18),fill=bg,outline=edge)
- if head:dr.rectangle((0,2,11,19),outline=C['text'])
+ rounded(dr,(1,3,10,18),fill=bg,outline=edge,radius=2)
+ if head:rounded(dr,(0,2,11,19),outline=C['text'],radius=3)
  save(f'tiny_state{state}.png',im)
 track_pages=[]
 for start in [0,8]:

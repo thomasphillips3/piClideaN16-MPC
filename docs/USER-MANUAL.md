@@ -1,6 +1,6 @@
 # πClideaN16 MPC — User Manual
 
-Version 1.2.1
+Version 1.2.2
 
 ## 1. Overview
 
@@ -66,9 +66,9 @@ To hold a note until the next effective trigger on the lane, use HOLD on the SET
 
 ![Selective RAND on Akai Force: HITS and DIVISION selected on lane A07](images/rand-selection-force-1.2.0.png)
 
-In this example, lane A07 is active and only HITS and DIVISION are selected in green. Pressing RAND again randomizes those two settings. The other six lane controls keep their values. The small white square on RAND indicates selection mode; a white outline around a control indicates focus, not an additional randomization target.
+In this example, lane A07 is active and only HITS and DIVISION are selected in green. Pressing RAND again randomizes those two settings. The other six lane controls keep their values. The small white dot on RAND indicates selection mode; a white outline around a control indicates focus, not an additional randomization target.
 
-- Press RAND once to enter selection mode. RAND turns green and italic, with a white square in its upper-right corner.
+- Press RAND once to enter selection mode. RAND turns green and italic, with a white dot in its upper-right corner.
 - Tap any of the eight control areas to include or exclude that parameter. Included areas turn green. Touching them does not change their values.
 - Press RAND again to randomize only the selected parameters on the current lane. RAND and all selection indicators return to their normal appearance.
 - With no parameters selected, the second press closes selection without changing the lane.
@@ -89,7 +89,7 @@ In EDIT, the upper LINE row is dimmed and shows the lane defaults as read-only r
 - RATCHET: 1–8 hits evenly distributed within the step.
 - DECAY: ratchet velocity multiplier, 0–150 percent. 100 keeps the same velocity; lower values fade repeats, higher values increase them up to 127. With a single hit it has no effect. At 0, only the first hit plays.
 
-A small square marks a custom step value. Without a custom value, velocity and probability follow the line; ratchet defaults to 1 and decay to 100.
+A small dot marks a custom step value. Without a custom value, velocity and probability follow the line; ratchet defaults to 1 and decay to 100.
 
 ### Select, draw and erase
 

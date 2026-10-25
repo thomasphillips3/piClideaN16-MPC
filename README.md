@@ -1,6 +1,6 @@
 # πClideaN 16 MPC
 
-**Version 1.2.1 · Sixteen-lane Euclidean MIDI sequencer for Akai MPC OS**
+**Version 1.2.2 · Sixteen-lane Euclidean MIDI sequencer for Akai MPC OS**
 
 ![πClideaN 16 MPC](Cover.JPG)
 
@@ -17,6 +17,7 @@ Build evolving drum patterns with sixteen independent lanes, per-step expression
 - Automatic pattern rotation at a configurable cycle interval.
 - Per-lane GATE / HOLD for short hits and sustained notes.
 - Touch selection, note drawing, contextual erase, mute and solo.
+- Rounded controls and inset circular status indicators across all five plugin pages.
 - Read-only LINE references in EDIT, with per-step controls kept active.
 - Dimmed lane selectors for explicitly muted lanes, preserving selection and activity feedback.
 - Azure activity pulses on all sixteen lane buttons during playback.
@@ -37,7 +38,7 @@ The plugin generates MIDI only. Use a separate Drum Track or drum instrument to 
 
 ## Download and setup
 
-Install [piClideaN-MPC-1.2.1-armv7.zip](Installation/piClideaN-MPC-1.2.1-armv7.zip) with a compatible portable-package installer. See [Installation and removal](docs/INSTALLATION.md).
+Install [piClideaN-MPC-1.2.2-armv7.zip](Installation/piClideaN-MPC-1.2.2-armv7.zip) with a compatible portable-package installer. See [Installation and removal](docs/INSTALLATION.md).
 
 ## Documentation
 

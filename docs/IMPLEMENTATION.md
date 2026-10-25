@@ -53,3 +53,7 @@ EDIT renders the four LINE controls with dimmed artwork, no Q-Link action and no
 ## Muted lane selectors
 
 Each A01–A16 selector uses mutually exclusive native button states for normal idle, normal activity and explicit mute. Mute takes priority over activity artwork. Selection keeps its white outline. The states reuse existing lN_mute and lane_flashN parameters; Solo exclusion is not treated as explicit mute. No separate passive hit layer, extra scheduler or MIDI output is introduced.
+
+## Rounded skin artwork
+
+A shared 10-pixel radius in native 1280 × 628 coordinates is used for control artwork, with proportionate radii for the main frame and miniature step tiles. Rounded backgrounds include their own fill; selected outlines match their control. Passive transparent PNG overlays implement rounded native-focus feedback with the existing WhenFocussed visibility condition. They introduce no touch actions. Small state dots retain their original enabling conditions and use an inset position. Native MPC header and tab rendering remain host-owned.
