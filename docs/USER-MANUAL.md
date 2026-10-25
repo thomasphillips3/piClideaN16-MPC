@@ -64,9 +64,9 @@ To hold a note until the next effective trigger on the lane, use HOLD on the SET
 
 ### Selective RAND
 
-![Selective RAND on Akai Force: HITS and DIVISION selected on lane A07](images/rand-selection-force-1.2.0.png)
+![Selective RAND on Akai Force: HITS and ROTATE selected on lane A11, white focus outline on ROTATE](images/rand-selection-force-1.2.2.png)
 
-In this example, lane A07 is active and only HITS and DIVISION are selected in green. Pressing RAND again randomizes those two settings. The other six lane controls keep their values. The small white dot on RAND indicates selection mode; a white outline around a control indicates focus, not an additional randomization target.
+In this example, lane A11 is active and only HITS and ROTATE are selected in green. Pressing RAND again randomizes those two settings. The other six lane controls keep their values. The small white dot on RAND indicates selection mode; a white outline around a control indicates focus, not an additional randomization target.
 
 - Press RAND once to enter selection mode. RAND turns green and italic, with a white dot in its upper-right corner.
 - Tap any of the eight control areas to include or exclude that parameter. Included areas turn green. Touching them does not change their values.
