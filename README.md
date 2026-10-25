@@ -34,7 +34,7 @@ The plugin generates MIDI only. Use a separate Drum Track or drum instrument to 
 
 ### Setup — pad mapping and GATE / HOLD
 
-![SETUP on Akai Force: Drum Track routing, MIDI notes and per-lane GATE / HOLD](docs/images/setup-force-1.1.4.png)
+![SET 09–16 on Akai Force: Drum Track routing, MIDI notes and HOLD enabled on A13](docs/images/setup-hold-force-1.2.2.png)
 
 ## Download and setup
 

@@ -17,7 +17,7 @@ On the target track, choose `piClideaN MPC Out` as an input and match its channe
 
 Each instance owns a separate MIDI output. Additional instances use numbered port labels. Select the correct output on each target.
 
-![Connect a target — SET page captured on Akai Force](images/setup.png)
+![Connect a target — SET 09–16, DRUM TRACK, bank A and channel 1](images/setup-hold-force-1.2.2.png)
 
 DRUM TRACK is the default target. Bank A provides notes 36–51 as the initial sixteen-pad mapping. Bank selection applies the supplied note table; it does not inspect another track. Notes remain editable. DRUM INSTRUMENT provides named sounds and an Incipience note-map action; check the instrument's note assignments before applying it. Mapping changes do not rewrite the rhythm.
 
@@ -172,7 +172,9 @@ RESET PHASE requests a fresh phase at the next step boundary while playing. CYCL
 
 ## 6. SET pages — GATE / HOLD
 
-![SET page on Akai Force: independent GATE and HOLD modes for each lane](images/setup-force-1.1.4.png)
+![SET 09–16 on Akai Force: DRUM TRACK, bank A, channel 1 and HOLD enabled on A13](images/setup-hold-force-1.2.2.png)
+
+In this capture, only A13 uses HOLD (amber); the other visible lanes remain in GATE. MIDI notes 44–51 are assigned to lanes 09–16 in this example.
 
 Each lane has a GATE / HOLD button in the MODE column, immediately before SOUND / PAD. It is available in both SET 01–08 and SET 09–16 and affects only that lane.
 
