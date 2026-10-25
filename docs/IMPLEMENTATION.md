@@ -45,3 +45,11 @@ Sixteen read-only lane_flash parameters publish playback activity. They are excl
 ## Selective randomization
 
 RAND uses transient selection state and an eight-bit parameter mask. Seventeen appended non-automatable UI parameters expose mode, target indicators and touch actions. No new MIDI output, queue or scheduler is introduced. Selection is not serialized in PICN4.
+
+## LINE references in EDIT
+
+EDIT renders the four LINE controls with dimmed artwork, no Q-Link action and no hardware focus. Contextual q0–q3 writes and selected-lane Velocity, Probability, Humanize and Gate aliases are rejected while EDIT is active. Canonical lN_* parameters remain writable for host automation. The four selected-step controls remain active. Returning to LINE restores normal editing. Parameter indices and PICN4 state are unchanged.
+
+## Muted lane selectors
+
+Each A01–A16 selector uses mutually exclusive native button states for normal idle, normal activity and explicit mute. Mute takes priority over activity artwork. Selection keeps its white outline. The states reuse existing lN_mute and lane_flashN parameters; Solo exclusion is not treated as explicit mute. No separate passive hit layer, extra scheduler or MIDI output is introduced.

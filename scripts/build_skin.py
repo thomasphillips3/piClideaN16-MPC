@@ -1,4 +1,4 @@
-"""Generate three native MPC pages matching the approved first mockup (2 x 16 steps)."""
+"""Generate five native MPC pages for the sixteen-lane sequencer."""
 from pathlib import Path
 import json,zipfile,copy,hashlib,math,shutil,sys,re
 from functools import lru_cache
@@ -12,6 +12,7 @@ A.mkdir(parents=True)
 z=zipfile.ZipFile(B/'reference/skin-base.zip');assert hashlib.sha256((B/'reference/skin-base.zip').read_bytes()).hexdigest()==(B/'reference/skin-base.zip.sha256').read_text().split()[0]
 J=json.loads(z.read('Plugin Skins/TUI.json'));D=J['pageData'];D['componentDefinitions']['localComponentDefinitions']=[];defs=D['componentDefinitions']['localComponentDefinitions']
 C={'bg':'#171a1e','panel':'#252b31','oled':'#111b18','text':'#e8e5d0','muted':'#b4bcba','red':'#f2474d','amber_bg':'#342e22','amber_text':'#c5ac78','amber_edge':'#8b7854'}
+READ_ONLY_TEXT='#6b756f'
 @lru_cache(maxsize=32)
 def font(n):return ImageFont.truetype(str(B/'reference/fonts/TitilliumWeb-Regular.ttf'),n)
 def text(d,xy,t,n=23,c=None,anchor=None):d.text(xy,t,font=font(n),fill=c or C['text'],anchor=anchor)
@@ -98,21 +99,28 @@ im=Image.new('RGB',(58,58*128),C['oled']);dr=ImageDraw.Draw(im)
 for v in range(128):
  y=v*58;dr.ellipse((4,y+4,54,y+54),outline=C['text'],width=2);a=math.radians(-135+270*v/127);dr.line((29,y+29,29+math.sin(a)*20,y+29-math.cos(a)*20),fill=C['text'],width=3)
 save('dial.png',im)
+# Read-only reference strip: same frames/geometry, attenuated foreground only.
+reference=Image.new('RGB',im.size,C['oled'])
+reference=Image.blend(reference,im,.35)
+save('dial_read_only.png',reference)
 # Native 1280 x 628 content: MPC owns the header and bottom tabs.
 im,dr=image(1280,628);save('pattern.png',im)
 parts=[art('pattern.png',0,0,1280,628)]
 for i in range(16):
  x=20+(i%8)*156;w=148;h=46;tag=f'lane_select_{i}';children=[]
- # Same native selection binding in both activity states; no passive hit overlay.
- for flash in [0,1]:
+ # Exactly one native selection owner is visible per lane. Explicit Mute
+ # overrides activity immediately; Solo exclusions retain the usual artwork.
+ for muted,flash in [(0,0),(0,1),(1,0)]:
   for selected in [0,1]:
-   bg='#203c49' if flash else '#352329' if selected else C['panel']
-   ink='#91c9df' if flash else C['red'] if selected else C['text']
-   edge='#ffffff' if selected else '#5b9cb7' if flash else '#485057'
+   bg=('#2b2529' if selected else '#1b2023') if muted else '#203c49' if flash else '#352329' if selected else C['panel']
+   ink=('#ad747b' if selected else '#858d91') if muted else '#91c9df' if flash else C['red'] if selected else C['text']
+   edge='#ffffff' if selected else '#333b40' if muted else '#5b9cb7' if flash else '#485057'
    im,d=image(w,h,bg);d.rectangle((1,1,w-2,h-2),outline=edge,width=2 if selected else 1)
-   text(d,(w//2,h//2),f'A{i+1:02}',24,ink,'mm');save(tag+f'_f{flash}_{selected}.png',im)
-  native=child('Button',dict(version=2,onImage=tag+f'_f{flash}_1.png',offImage=tag+f'_f{flash}_0.png',buttonId=i,numButtonsInGroup=16,handleName='Data',gestureBehaviour='Instant'),0,0,w,h)
-  native['bounds']['acceptsHWFocus']='No';native['bounds']['additionalInvalidatingHandles']=[gate(f'lane_flash{i}',flash,2)];children.append(native)
+   text(d,(w//2,h//2),f'A{i+1:02}',24,ink,'mm');save(tag+f'_m{muted}_f{flash}_{selected}.png',im)
+  native=child('Button',dict(version=2,onImage=tag+f'_m{muted}_f{flash}_1.png',offImage=tag+f'_m{muted}_f{flash}_0.png',buttonId=i,numButtonsInGroup=16,handleName='Data',gestureBehaviour='Instant'),0,0,w,h)
+  conditions=[gate(f'l{i}_mute',muted,2)]
+  if not muted:conditions.append(gate(f'lane_flash{i}',flash,2))
+  native['bounds']['acceptsHWFocus']='No';native['bounds']['additionalInvalidatingHandles']=conditions;children.append(native)
  kind=local(tag,children,[action('Q-Link')]);parts.append(placed(kind,'line_select16',x,12+(i//8)*52,w,h))
 parts += [button('edit_view','LINE',20,394,148,46,False,0,2),button('edit_view','EDIT',176,394,148,46,False,1,2)]
 parts += [*toggle('sel_mute','MUTE',488,394,148,46),*toggle('sel_solo','SOLO',644,394,148,46)]
@@ -123,15 +131,22 @@ parts += [button('edit_tool','SELECT',800,394,148,46,False,0,2,extra=[gate('edit
 # Opaque display artwork, headers and four controls per scope.
 im,dr=image(1240,264,C['oled']);dr.rectangle((1,1,1238,262),outline='#68736a',width=2);dr.line((8,131,1230,131),fill='#68736a',width=1);save('scopes.png',im);parts.append(art('scopes.png',20,120,1240,264))
 im,d=image(299,94,C['oled']);d.rectangle((1,1,297,92),outline='#68736a');save('parameter_box.png',im)
+im,d=image(299,94,C['oled']);d.rectangle((1,1,297,92),outline='#303f36');save('parameter_box_read_only.png',im)
 for view,keys in [(0,['sel_'+k for k in ['velocity','prob','humanize','gate','steps','hits','rotate','division']]),(1,['sel_velocity','sel_prob','sel_humanize','sel_gate','step_velocity','step_prob','step_ratchet','step_decay'])]:
  for title,y in [('LINE',120),('STEP' if view else 'STEPS',252)]:
-  im,d=image(720,26,C['oled']);text(d,(0,0),title,20,C['text']);fn=f'scope_v{view}_{y}.png';save(fn,im);c=art(fn,34,y+4,720,26);c['bounds']['additionalInvalidatingHandles']=[gate('edit_view',view,2)];parts.append(c)
+  im,d=image(720,26,C['oled']);text(d,(0,0),title,20,READ_ONLY_TEXT if view and y==120 else C['text']);fn=f'scope_v{view}_{y}.png';save(fn,im);c=art(fn,34,y+4,720,26);c['bounds']['additionalInvalidatingHandles']=[gate('edit_view',view,2)];parts.append(c)
  for n,key in enumerate(keys):
   x=30+(n%4)*309;y=151+(n//4)*132
-  children=[art('parameter_box.png',0,0,299,94),child('Knob',dict(version=5,knobType='FilmStrip',filmStrip='dial.png',numFrames=127,invert=False,dragOrientation='Vertical',handleName='Data'),9,19,58,58),label(82,0,210,27,20,kind='Name'),label(82,27,200,40,34)]
-  kind=local(f'knob_v{view}_{n}',children,[action('Q-Link')],focus=True)
+  read_only=bool(view and n<4)
+  colour='ff'+READ_ONLY_TEXT[1:] if read_only else 'ffe8e5d0'
+  children=[art('parameter_box_read_only.png' if read_only else 'parameter_box.png',0,0,299,94),child('Knob',dict(version=5,knobType='FilmStrip',filmStrip='dial_read_only.png' if read_only else 'dial.png',numFrames=127,invert=False,dragOrientation='Vertical',handleName='Data'),9,19,58,58),label(82,0,210,27,20,kind='Name',colour=colour),label(82,27,200,40,34,colour=colour)]
+  if read_only:
+   for component in children:component['bounds']['acceptsHWFocus']='No'
+  kind=local(f'knob_v{view}_{n}',children,None if read_only else [action('Q-Link')],focus=not read_only)
   conditions=[gate('edit_view',view,2)]+([gate('rand_mode',0,2)] if not view else [])
-  parts.append(placed(kind,key,x,y,299,94,conditions))
+  component=placed(kind,key,x,y,299,94,conditions)
+  if read_only:component['bounds']['acceptsHWFocus']='No'
+  parts.append(component)
   if not view:
    # Mutually exclusive sibling: exactly one touch owner at any given time.
    picked=[]

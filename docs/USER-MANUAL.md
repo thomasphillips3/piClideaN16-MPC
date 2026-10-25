@@ -1,6 +1,6 @@
 # πClideaN16 MPC — User Manual
 
-Version 1.2.0
+Version 1.2.1
 
 ## 1. Overview
 
@@ -82,7 +82,7 @@ Available targets: Velocity, Probability, Humanize, Gate, Steps, Hits, Rotate an
 
 ![PATTERN — EDIT mode captured on Akai Force](images/pattern-edit.png)
 
-The upper LINE row retains the lane defaults. The lower STEP row edits the selected step:
+In EDIT, the upper LINE row is dimmed and shows the lane defaults as read-only references. Touch, the data wheel and Q1–Q4 cannot edit these four controls. Return to LINE to change them. Existing host automation of canonical lane parameters continues to run. The lower STEP row remains active and edits the selected step:
 
 - VELOCITY: replaces the lane velocity for this step.
 - PROBABILITY: replaces the lane probability; it is not multiplied by it.
@@ -97,7 +97,9 @@ SELECT touches a step without changing its trigger. DRAW toggles its trigger on 
 
 In SELECT, ERASE clears the selected step's custom expression values while retaining its trigger. In DRAW, ERASE removes its trigger while retaining its expression settings. Changes are immediate; there is no undo history.
 
-### Lane activity
+### Muted lanes and activity
+
+The A01–A16 selectors are dimmed when their lanes are explicitly muted. A muted selected lane keeps its white selection border and uses an attenuated red label. Touching a muted lane selects it without unmuting it. Solo exclusion alone does not dim the other lane selectors.
 
 The A01–A16 buttons briefly illuminate in azure when their scheduled Note On reaches playback time. This shows the activity of all sixteen lanes while PATTERN displays the selected lane's steps. The selected lane keeps its white outline.
 
@@ -193,7 +195,7 @@ HOLD cannot extend a sample beyond its natural end. The target must respond to N
 
 ## 7. Q-Links and automation
 
-On PATTERN, Q1–Q4 control line Velocity, Probability, Humanize and Gate. Q5–Q8 control Steps, Hits, Rotate and Division in LINE, or selected-step Velocity, Probability, Ratchet and Decay in EDIT.
+On PATTERN in LINE mode, Q1–Q4 control line Velocity, Probability, Humanize and Gate. These four contextual controls are inactive in EDIT, where the dimmed LINE row remains visible as a reference. Q5–Q8 control Steps, Hits, Rotate and Division in LINE, or selected-step Velocity, Probability, Ratchet and Decay in EDIT.
 
 TR pages expose lane selection, playback mode, rotation, shift and interval. SET pages expose lane selection, target, channel and bank. A white focus border identifies the control operated by the data wheel.
 

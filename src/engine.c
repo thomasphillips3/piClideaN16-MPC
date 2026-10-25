@@ -203,6 +203,9 @@ static int read_state(Engine *e,const char *v){
 }
 static void set_param(void *inst,const char *key,const char *val){Engine *e=inst;if(!strcmp(key,"state")){e->state_valid=(!strncmp(val,"PICN2 ",6)||!strncmp(val,"PICN3 ",6)||!strncmp(val,"PICN4 ",6))?read_evolution(e,val):read_state(e,val);if(e->state_valid){rand_clear(e);e->q_valid=0;e->visual_ready=0;e->playing=0;for(int k=0;k<LANES;k++){e->reset_at[k]=-1;e->head[k]=-1;e->display_tick[k]=0;e->ui_offset[k]=0;}}return;}if(e->rand_mode&&key[0]=='q'&&key[1]>='0'&&key[1]<='7'&&!key[2])return;if(q_set(e,key,val))return;int v;if(!integer(val,&v))return;int i,j;
  if(!strcmp(key,"rand_mode")||!strncmp(key,"rand_pick",9))return; /* read-only host echoes */
+ /* Reject stale touch/data-wheel writes to the read-only LINE row in EDIT.
+    Only selection aliases are guarded; lN_* host automation is unchanged. */
+ if(e->edit_view&&(!strcmp(key,"sel_velocity")||!strcmp(key,"sel_prob")||!strcmp(key,"sel_humanize")||!strcmp(key,"sel_gate")))return;
  if(parse_suffix(key,"rand_toggle",8,&i)){if(v>0&&e->rand_mode&&e->rand_line==e->selected){e->rand_mask^=1u<<i;notify_id(e,RAND_ID+1+i);}return;}
  if(!strcmp(key,"randomize")){if(v>0)rand_press(e);return;}
  if(e->rand_mode&&(!strcmp(key,"half")||!strcmp(key,"double")||!strncmp(key,"sel_",4)))return;
@@ -380,7 +383,7 @@ static void song_pos(void *inst,double ppq,double bpm,int playing,int frames){
  const snd_seq_real_time_t *qt=snd_seq_queue_status_get_real_time(e->queue_status);
  e->queue_now=qt->tv_sec+qt->tv_nsec/1e9;
  /* The host PPQ is a measured position, not an exact sample-clock increment.
-    Keep a coverage watermark: overlapping intervals never repeat
+    Keep a coverage watermark as in 0.1.0-candidate.3: overlap never repeats
     notes and ordinary host rounding must never cancel the kernel queue. */
  double host_ppq=ppq;
  double tolerance=fmax(1./960.,block*2.);

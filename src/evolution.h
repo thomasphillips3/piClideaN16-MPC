@@ -35,7 +35,11 @@ static void q_range(Engine *e,int q,int *lo,int *hi){static const int gen_lo[]={
 /* Q-Link aliases are continuous: preserve fractional moves instead of rounding
    them to a 127-bin value before mapping a seven-value ratchet range. */
 static int q_set(Engine *e,const char *key,const char *value){
- int q;if(!parse_suffix(key,"q",8,&q))return 0;if(e->dialog==1)return 1;char *end;errno=0;double raw=strtod(value,&end);
+ int q;if(!parse_suffix(key,"q",8,&q))return 0;
+ /* EDIT keeps LINE values visible as references, never as contextual targets.
+    Canonical lN_* automation remains writable independently of this UI guard. */
+ if(e->dialog==1||(e->edit_view&&q<4))return 1;
+ char *end;errno=0;double raw=strtod(value,&end);
  if(errno||end==value||*end||!isfinite(raw))return 1;raw=fmax(0,fmin(127,raw));
  int lo,hi;q_range(e,q,&lo,&hi);if(hi<=lo)return 1;const char *target=q_target(e,q);char buf[24];int current;
  if(get_param(e,target,buf,sizeof buf)<=0||!integer(buf,&current))return 1;
