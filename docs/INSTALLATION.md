@@ -17,7 +17,7 @@ The package contains regular files, requires no symbolic links and can be stored
 5. Review the destination and complete the installation. Allow the requested MPC restart after saving.
 6. Create a Plugin Track and select **πClideaN MPC**.
 7. Create or select the target Drum Track or drum instrument.
-8. On the target track, enable `piClideaN MPC Out` as its MIDI input and select the channel configured in SET.
+8. On the target track, enable `piClideaN MPC Out` as its MIDI input and receive channel 1 or all channels.
 9. Start the Force transport.
 
 The content directory is `Timo - VST - πClideaN MPC`. Typical locations are:
@@ -42,7 +42,7 @@ Use the installer's removal workflow so the plugin files and its registration ar
 
 - πClideaN produces MIDI, not audio: its own audio output is silent.
 - Enable its output on the intended target track, using the same MIDI channel.
-- Match the MIDI note in SET to the target pad or sound.
+- Match the MIDI note in CONFIG to the target pad or sound.
 - Disable unwanted parallel MIDI inputs to avoid duplicate hits.
 - For multiple instances, choose the corresponding numbered output port.
 - In HOLD, the target must respond to Note Off; One Shot playback may ignore it.

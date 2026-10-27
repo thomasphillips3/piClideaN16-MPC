@@ -4,6 +4,8 @@
 
 - `src/engine.c`: instance lifecycle, parameter access, ALSA scheduling, note ownership and host transport.
 - `src/evolution.h`: rhythmic traversal, step overrides, Q-Link aliases and state serialization.
+- `src/mod_lfo.h`: four dual-LFO slots, static preview cache, modulation and threshold scheduling.
+- `src/mod_types.h`: bounded modulation state and parameter declarations.
 - `src/drum_notes.h`: generated 128-entry note-map table.
 - `scripts/generate.py`: parameter definitions, VST configuration and note-map generation.
 - `scripts/build_skin.py`: native UI artwork and component definitions.

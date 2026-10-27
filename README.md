@@ -1,12 +1,16 @@
 # πClideaN 16 MPC
 
-**Version 1.2.2 · Sixteen-lane Euclidean MIDI sequencer for Akai MPC OS**
+**Version 1.2.3 · Sixteen-lane Euclidean MIDI sequencer for Akai MPC OS**
 
 ![πClideaN 16 MPC](Cover.JPG)
 
 Build evolving drum patterns with sixteen independent lanes, per-step expression and a native touch interface. Drive a Drum Track or a drum instrument through the plugin's dedicated MIDI output.
 
 ## Features
+
+- Four independent modulation slots, each with two LFOs and a bipolar MIX control.
+- Static four-bar waveform previews, configurable destinations and threshold-based Note On.
+- One CONFIG page for all sixteen MIDI notes and GATE / HOLD modes.
 
 - Sixteen lanes with 1–32 steps each.
 - Euclidean Steps, Hits and Rotate controls, with five rhythmic divisions.
@@ -17,7 +21,7 @@ Build evolving drum patterns with sixteen independent lanes, per-step expression
 - Automatic pattern rotation at a configurable cycle interval.
 - Per-lane GATE / HOLD for short hits and sustained notes.
 - Touch selection, note drawing, contextual erase, mute and solo.
-- Rounded controls and inset circular status indicators across all five plugin pages.
+- Rounded controls and inset circular status indicators across the plugin pages.
 - Read-only LINE references in EDIT, with per-step controls kept active.
 - Dimmed lane selectors for explicitly muted lanes, preserving selection and activity feedback.
 - Azure activity pulses on all sixteen lane buttons during playback.
@@ -32,13 +36,13 @@ The plugin generates MIDI only. Use a separate Drum Track or drum instrument to 
 
 ![TR 01–08 on Akai Force: rounded controls, step indicators and automatic rotation](docs/images/tracks-force-1.2.2.png)
 
-### Setup — pad mapping and GATE / HOLD
+### CONFIG — MIDI notes and GATE / HOLD
 
-![SET 09–16 on Akai Force: Drum Track routing, MIDI notes and HOLD enabled on A13](docs/images/setup-hold-force-1.2.2.png)
+![CONFIG: sixteen MIDI notes and GATE / HOLD controls — offline layout](docs/images/config-1.2.3-offline.png)
 
 ## Download and setup
 
-Install [piClideaN-MPC-1.2.2-armv7.zip](Installation/piClideaN-MPC-1.2.2-armv7.zip) with a compatible portable-package installer. See [Installation and removal](docs/INSTALLATION.md).
+Install [piClideaN-MPC-1.2.3-armv7.zip](Installation/piClideaN-MPC-1.2.3-armv7.zip) with a compatible portable-package installer. See [Installation and removal](docs/INSTALLATION.md).
 
 ## Documentation
 

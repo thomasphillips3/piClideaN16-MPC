@@ -13,7 +13,7 @@ if lock.exists():
  old=lock.read_text().split();assert len(keys)>=len(old) and keys[:len(old)]==old,'Published parameter indices changed'
 gen_vst.check_lock(str(B),params)
 (B/'build').mkdir(exist_ok=True);cfg=gen_vst.load(str(B/'vst.json'));gen_vst.gen_params(cfg,params,str(B/'build/params.h'))
-auto=[int(bool(re.fullmatch(r'l(?:[0-9]|1[0-5])_(?:[a-z]+|s[0-9]+_[a-z]+)',p['key'])) or p['key'] in ('channel','bank','target_mode')) for p in params]
+auto=[int(bool(re.fullmatch(r'l(?:[0-9]|1[0-5])_(?:[a-z]+|s[0-9]+_[a-z]+|mod_mix|mod[01]_(?:[a-z]+|c[0-7]))',p['key'])) or p['key'] in ('channel','bank','target_mode')) for p in params]
 with (B/'build/params.h').open('a') as f:
  f.write('\nstatic const unsigned char PICN_AUTOMATABLE[NPARAMS]={'+','.join(map(str,auto))+'};\n')
  f.write('static const unsigned short PICN_PARAM_LOOKUP[NPARAMS]={'+','.join(map(str,sorted(range(len(keys)),key=lambda i:keys[i])))+'};\n')

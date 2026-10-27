@@ -1,7 +1,7 @@
 {
   "repo": "sd88me/mpc-vst-plugins",
   "commit": "97a2effca4114dd00f738b018e2f0d1d3ccb2d7f",
-  "modifications": "Host transport/sample-rate bridge, canonical automation, bounded notifications, state parsing and 32 KiB state storage; see LOCAL-*.patch.",
+  "modifications": "LOCAL-CONTEXT.patch: actual sample rate and cycle bounds, fail-silent missing time, suspension Note Off, canonical automation eligibility, pre-2.34 ARM pthread ABI. Upstream Q-Link refresh fixes retained. LOCAL-NOTIFICATIONS.patch: binary search of the generated sorted parameter-index table; no change to Q-Link refresh semantics. LOCAL-STATE-VALIDATION.patch: reject embedded NULs and propagate the engine state validation result to effSetChunk.",
   "files": [
     {
       "file": "LICENSE",
@@ -30,6 +30,18 @@
     {
       "file": "tools/params.py",
       "sha256": "2d5c8b5dd62979c691a50fbccb44fe05b0fb626e24d7f1aa70d6bdb92748b3ef"
+    },
+    {
+      "file": "docs/MIDI_TIMING.md",
+      "sha256": "04405e009bd908a7219c0508b19add7a263ea296f374d942b302b6c57d0f6124"
+    },
+    {
+      "file": "docs/PORTING.md",
+      "sha256": "4fec90600c1f26831ea305f87ef8e52cbb96e425b815b096056ba31aa867f8a8"
+    },
+    {
+      "file": "poc/songpos/engine.c",
+      "sha256": "55e66151e652cfe5e9c825c622d6310398d1a7657dd3bf382191661c5521cc2b"
     },
     {
       "file": "LOCAL-NOTIFICATIONS.patch",

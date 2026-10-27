@@ -1,7 +1,10 @@
-# Version 1.2.2
+# Release 1.2.3
 
-Rounded buttons, lane selectors, step pads, parameter frames, numeric fields and dialog controls give the interface a consistent appearance. Focus and playback outlines follow the rounded shapes. TRACKS mini-steps use proportionate corner rounding.
+- Four assignable modulation slots, each with two LFOs and MIX.
+- Parameter modulation and threshold-driven Note On with note ownership safeguards.
+- Static four-bar previews, Sample & Hold transitions, eight Free Curve sliders and a threshold guide.
+- Single CONFIG page for sixteen fixed lanes, editable MIDI notes and GATE / HOLD.
+- Simplified navigation: PATTERN, MOD, 01 - 08, 09 - 16, CONFIG.
+- MIDI output fixed to channel 1; instrument profile and bank controls removed.
 
-RAND selection and custom step-value indicators are now small circular dots, inset from the upper-right corner for clearer separation from the outline.
-
-Control positions, touch areas, actions, parameter indices, saved project format and the MIDI engine are unchanged. The PATTERN command row stays below the parameter panel in both LINE and EDIT. MPC owns the native header and bottom tabs, whose appearance remains system-controlled.
+Generates MIDI only. ARMv7 build for compatible MPC OS standalone hardware. Existing musical lane/step values remain stored independently from modulation.

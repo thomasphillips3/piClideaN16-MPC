@@ -1,6 +1,6 @@
 # πClideaN16 MPC — User Manual
 
-Version 1.2.2
+Version 1.2.3
 
 ## 1. Overview
 
@@ -8,18 +8,18 @@ Version 1.2.2
 Each lane triggers one MIDI note on a shared output channel. 
 Use the lanes for individual Drum Track pads or the sounds of a drum instrument.
 
-The five pages are PATTERN, TR 01-08, TR 09-16, SET 01-08 and SET 09-16. 
+The five pages are PATTERN, MOD, 01 - 08, 09 - 16 and CONFIG. 
 Lane buttons A01–A16 select a sequencer lane.
 
 ## 2. Connect a target
 
-On the target track, choose `piClideaN MPC Out` as an input and match its channel to SET. In SET, choose DRUM TRACK or DRUM INSTRUMENT and adjust each lane's pad or MIDI note. Start the Force transport to run the sequencer.
+On a separate Drum Track or drum instrument, select `piClideaN MPC Out` as the MIDI input and receive channel 1 or all channels. Each instance has its own output port; additional instances use numbered port names. Avoid receiving the same notes through two routes.
 
-Each instance owns a separate MIDI output. Additional instances use numbered port labels. Select the correct output on each target.
+Open CONFIG. Each fixed lane A01–A16 has a GATE / HOLD button and an editable MIDI NOTE from 0 to 127. The default notes are 36–51. Set the notes expected by the target instrument. There is no instrument profile or bank selector. The output uses MIDI channel 1.
 
-![Connect a target — SET 09–16, DRUM TRACK, bank A and channel 1](images/setup-hold-force-1.2.2.png)
+![CONFIG — offline layout of the sixteen lanes](images/config-1.2.3-offline.png)
 
-DRUM TRACK is the default target. Bank A provides notes 36–51 as the initial sixteen-pad mapping. Bank selection applies the supplied note table; it does not inspect another track. Notes remain editable. DRUM INSTRUMENT provides named sounds and an Incipience note-map action; check the instrument's note assignments before applying it. Mapping changes do not rewrite the rhythm.
+Start the host transport. The sequencer follows host tempo and position; Stop releases its notes. Save the host project to store settings.
 
 ## 3. PATTERN — LINE
 
@@ -49,7 +49,7 @@ MUTE silences the lane. SOLO limits playback to soloed lanes; multiple lanes can
 
 ### Gate length — how long a MIDI note stays held
 
-The GATE knob in the upper LINE row controls the time between each Note On and its Note Off when that lane is in GATE mode on the SET page. Its range is 10–95 percent of one step duration. This is a MIDI note duration, not a volume control or a sample-length setting.
+The GATE knob in the upper LINE row controls the time between each Note On and its Note Off when that lane is in GATE mode on the CONFIG page. Its range is 10–95 percent of one step duration. This is a MIDI note duration, not a volume control or a sample-length setting.
 
 - Lower values release the note sooner: useful for short, detached hits when the target responds to Note Off.
 - Higher values hold the note longer, up to 95 percent of the step duration.
@@ -60,7 +60,7 @@ The GATE value applies to the entire lane, including steps with their own veloci
 
 The audible effect depends on the target instrument's playback mode and envelope. A One Shot sample may play to its end regardless of Note Off. A gated sample or synthesizer may begin its release stage on Note Off, so its sound can continue after the MIDI note is released. GATE cannot stretch a sample or make it longer than its natural playback.
 
-To hold a note until the next effective trigger on the lane, use HOLD on the SET page. In HOLD mode, the GATE knob's value remains stored but does not determine the note's duration. See **SET pages — GATE / HOLD** below.
+To hold a note until the next effective trigger on the lane, use HOLD on the CONFIG page. In HOLD mode, the GATE knob's value remains stored but does not determine the note's duration. See **CONFIG pages — GATE / HOLD** below.
 
 ### Selective RAND
 
@@ -170,13 +170,9 @@ AUTO ROTATE shifts the pattern content after the chosen number of complete lane 
 
 RESET PHASE requests a fresh phase at the next step boundary while playing. CYCLE and SHIFT display the current phase. The selected step follows its stored data when rotation moves it to another visible position.
 
-## 6. SET pages — GATE / HOLD
+## 6. CONFIG — GATE / HOLD
 
-![SET 09–16 on Akai Force: DRUM TRACK, bank A, channel 1 and HOLD enabled on A13](images/setup-hold-force-1.2.2.png)
-
-In this capture, only A13 uses HOLD (amber); the other visible lanes remain in GATE. MIDI notes 44–51 are assigned to lanes 09–16 in this example.
-
-Each lane has a GATE / HOLD button in the MODE column, immediately before SOUND / PAD. It is available in both SET 01–08 and SET 09–16 and affects only that lane.
+CONFIG shows all sixteen lanes on one page. Each MODE button affects only its lane. The note field accepts values 0–127.
 
 ### Using the GATE / HOLD button
 
@@ -186,7 +182,7 @@ Each lane has a GATE / HOLD button in the MODE column, immediately before SOUND 
 
 For example, set lane A13 to HOLD to let a long sound continue across empty steps until A13 triggers again. A note played on another lane does not release A13. A rest or a trigger rejected by probability does not end the held note. The sample must still be long enough, and the target must respond appropriately to Note Off.
 
-The SET button selects the **note-duration mode**; the PATTERN knob sets the **duration percentage used in GATE mode**. These are two different controls. Each lane can use a different mode, and the choices are saved with the Force project.
+The CONFIG button selects the **note-duration mode**; the PATTERN knob sets the **duration percentage used in GATE mode**. These are two different controls. Each lane can use a different mode, and the choices are saved with the Force project.
 
 
 ### Release behaviour and target setup
@@ -203,7 +199,7 @@ HOLD cannot extend a sample beyond its natural end. The target must respond to N
 
 On PATTERN in LINE mode, Q1–Q4 control line Velocity, Probability, Humanize and Gate. These four contextual controls are inactive in EDIT, where the dimmed LINE row remains visible as a reference. Q5–Q8 control Steps, Hits, Rotate and Division in LINE, or selected-step Velocity, Probability, Ratchet and Decay in EDIT.
 
-TR pages expose lane selection, playback mode, rotation, shift and interval. SET pages expose lane selection, target, channel and bank. A white focus border identifies the control operated by the data wheel.
+TR pages expose lane selection, playback mode, rotation, shift and interval. CONFIG uses touch and the data wheel, without target or bank Q-Link assignments. A white focus border identifies the control operated by the data wheel.
 
 Canonical lane and step parameters are exposed separately for host automation. Contextual Q-Link aliases depend on the visible selection and are not advertised as automation targets. Step automation addresses stored source steps, which can move on screen under automatic rotation.
 
@@ -216,3 +212,18 @@ Save the Force project to store all sixteen patterns, step overrides, note assig
 Probability is calculated once for a complete ratchet group and is deterministic for a given lane seed and musical position. A repeating host loop can therefore repeat the same probability decisions.
 
 The plugin does not create native clips, control physical pad LEDs or synthesize audio. Scheduling has bounded event and loop budgets; see the engine documentation for the limits.
+
+
+## 9. MOD — dual LFO modulation
+
+MOD provides four independent slots: MOD 1–MOD 4. Select a slot, then assign its PAD to NONE or A01–A16 using the pad selection panel. Each pad can belong to one slot. All slots default to NONE and both LFOs default to OFF. Selecting a slot does not change the lane selected in PATTERN.
+
+![MOD — offline layout](images/mod-1.2.3-offline.png)
+
+Each LFO has an ON/OFF switch, waveform, SYNC or Hz rate, DEPTH, OFFSET, PHASE, DESTINATION and THRESHOLD. SYNC derives the rate from host tempo; Hz provides a frequency control. FREE CURVE is edited with eight sliders. The curve preview is static: it shows a four-bar window at the current tempo and changes when relevant settings change. Sample & Hold includes vertical transitions. At very high rates, a compact envelope is shown rather than a misleading undersampled curve.
+
+MIX is centered at 0: negative values favor LFO 1, positive values favor LFO 2. Each LFO keeps its own destination; MIX blends the source waveforms. NONE does not apply a destination, but an enabled source can still contribute to the mix.
+
+Parameter modulation changes playback values without rewriting stored lane or step settings. Note On uses threshold crossings: a rising crossing starts a note, a falling crossing releases it. While the LFO owns a note, regular sequencer triggers at the same note/channel are suppressed; the sequencer keeps advancing and resumes after release. A threshold line is displayed without a numeric label. The preview shows each individual source, so its crossing is a guide when the actual signal includes both sources.
+
+OFF LFOs and modulation on inaudible lanes suspend their phase; they resume from the retained phase. Stop, muting, reassignment and ownership changes use the note-release safeguards. No audio is generated or sampled.

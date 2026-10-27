@@ -49,3 +49,8 @@ The PICN4 state stores routing, selection, lane fields, per-step overrides, play
 Successful Note On scheduling appends the event time to a visual-only, fixed ring of 64 timestamps per lane. The display consumes due events using the same ALSA queue clock and shows a 140 ms pulse. It never flashes an event early just because the event was scheduled ahead of time.
 
 Numeric display updates retain the approximately 30 Hz cap. Sub-hits closer than 1/120 second can share an indication. Overflow drops visual events only; it does not change MIDI scheduling, consume a note-event budget or increment MIDI errors. Release/reset paths clear pending activity. The indicators are transient and are not serialized into project state.
+
+
+## Modulation processing
+
+Four slots each own two oscillators and one unique lane assignment. Disabled and inaudible sources suspend phase. Coefficients and static previews are cached. Note On threshold evaluation uses a bounded event budget and common note ownership so stale Note Off events cannot cut a newly owned note. Parameter modulation is applied to playback values without rewriting stored state. CONFIG uses a single effective note per lane; compatible saved states retain the note active in their stored routing mode.

@@ -1,9 +1,8 @@
-"""Generate the plugin parameter model. All runtime identifiers and paths are ASCII."""
+"""Generate the candidate model. All runtime identifiers and paths are ASCII."""
 from pathlib import Path
 import json
 from project_config import DISPLAY_NAME
 B=Path(__file__).resolve().parents[1]
-(B/'build/reports').mkdir(parents=True,exist_ok=True)
 P=[]
 def add(key,name,lo=0,hi=1,default=0,**kw):
  d=dict(key=key,name=name,min=lo,max=hi,default=default,display='int');d.update(kw);P.append(d)
@@ -19,7 +18,7 @@ choice('channel','Channel',[str(i) for i in range(1,17)],refresh_display=True)
 choice('bank','Bank',list('ABCDEFGH'),refresh_display=True)
 add('selected_step','Selected step',0,31,0)
 add('rhythm_choice','Rhythm',0,5,0,dynamic_display=True)
-add('dialog','Dialog',0,5,0,poll=False)
+add('dialog','Dialog',0,6,0,poll=False)
 add('edit_row','Mapping row',0,7,0)
 choice('map_sound','Sound',sounds,refresh_display=True)
 for k in ['open_rhythm','open_mapping','open_target','open_bank','close','apply_rhythm','apply_mapping','randomize','half','double']:
@@ -45,11 +44,11 @@ for i in range(32):
  trig(f'step_press{i}',f'Select step {i+1}',refresh_display=False)
  add(f'cell{i}',f'Step {i+1} state',0,9,0,poll=False)
 for i in range(8):
- for j in range(32):add(f'g{i}_{j}',f'Lane {i+1} step {j+1}',0,4,0,poll=False)
+ for j in range(32):add(f'g{i}_{j}',f'Retired grid / static MOD segment {i*32+j+1}',0,1023,528,poll=False)
 for k,n in [('line_label','Selected sound'),('target_label','Target'),('status','MIDI status'),('step_label','Selection'),('mapping_label','Mapping'),('port_label','Output port')]+[(f'name{i}',f'Lane {i+1} sound') for i in range(8)]:
  add(k,n,display='string',poll=k=='status')
 for i in range(32):add(f'preview{i}',f'Rhythm preview {i+1}',0,4,0,poll=False)
-# Append only: keep stable parameter indices, including reserved controls.
+# Append only: preserve every published candidate.1 index, including retired arrows.
 choice('line_select','Selected rhythm lane',[str(i+1) for i in range(8)],refresh_display=True)
 add('pattern_base','Pattern base visible',0,1,1,poll=False)
 add('setup_base','Setup base visible',0,1,1,poll=False)
@@ -57,7 +56,7 @@ for i in range(8):add(f'line_on{i}',f'Lane {i+1} selected',0,1,int(i==0),poll=Fa
 choice('choose_target','Choose target',['DRUM INSTRUMENT','DRUM TRACK'],default=1,refresh_display=True)
 choice('choose_bank','Choose bank',list('ABCDEFGH'),refresh_display=True)
 choice('choose_sound','Choose sound',sounds,refresh_display=True)
-# Append-only parameter definitions and fixed normalized ranges.
+# Evolution: append only; legacy indices and ranges stay unchanged.
 choice('edit_view','Pattern view',['LINE','EDIT'],default=1,refresh_display=True)
 add('edit_tool','Step tool',0,1,0,dynamic_display=True)
 for k,n,lo,hi,de in [('step_velocity','VELOCITY',1,127,100),('step_prob','PROBABILITY',0,100,100),('step_ratchet','RATCHET',1,8,1),('step_decay','DECAY',0,150,100)]:
@@ -84,7 +83,7 @@ add('step_position','Selected visible step',1,32,1,poll=False)
 for i in range(8):
  for j in range(32):add(f'trackcell{i}_{j}',f'Track {i+1} step {j+1}',0,8,0,poll=False)
 for k in ['sel_mute','sel_solo','auto_rotate']+[f'l{i}_{kind}' for i in range(8) for kind in ['mute','solo']]:trig('toggle_'+k,'Toggle '+k)
-# Stable parameter ordering for all sixteen lanes.
+# Sixteen-lane extension: preserve the entire published 2196-key prefix.
 old_lanes=[dict(p) for p in P if p['key'].startswith('l0_')]
 for i in range(8,16):
  for template in old_lanes:
@@ -104,7 +103,7 @@ for i in range(8,16):
  for j in range(32):add(f'trackcell{i}_{j}',f'Track {i+1} step {j+1}',0,8,0,poll=False)
  for kind in ['mute','solo']:trig(f'toggle_l{i}_{kind}',f'Toggle line {i+1} {kind}')
 add('line_select16','Selected lane',0,15,0,refresh_display=True,nudge_pct=10)
-# Append-only HOLD flags; existing parameter definitions remain unchanged.
+# Append-only HOLD flags; all 3925 published definitions remain unchanged.
 for i in range(16):add(f'l{i}_hold',f'L{i+1} note hold',0,1,0)
 # Playback indicators are read-only visual parameters, never automation targets.
 for i in range(16):add(f'lane_flash{i}',f'Lane {i+1} activity',0,1,0,poll=False)
@@ -112,10 +111,32 @@ for i in range(16):add(f'lane_flash{i}',f'Lane {i+1} activity',0,1,0,poll=False)
 add('rand_mode','RAND selection mode',0,1,0,poll=False)
 for i in range(8):add(f'rand_pick{i}',f'RAND selected parameter {i+1}',0,1,0,poll=False)
 for i in range(8):trig(f'rand_toggle{i}',f'Choose RAND parameter {i+1}')
+# E01: expose contextual controls only. Full sixteen-lane MOD configuration
+# lives in PICN5; Force 3.10 skin handles stop at Parameter 4095.
+mod_specs=[('on',0,1,0),('wave',0,7,0),('sync',0,1,1),('rate',0,6,2),('hz',0,1000,500),('depth',-100,100,50),('offset',-100,100,0),('phase',0,359,0),('dest',0,7,0),('threshold',-100,100,0)]+[(f'c{k}',-100,100,round(100*__import__('math').sin(k*__import__('math').tau/8))) for k in range(8)]
+mod_options={'wave':['SINE','TRIANGLE','RAMP UP','RAMP DOWN','SQUARE','SAMPLE & HOLD','RANDOM SMOOTH','FREE CURVE'],'sync':['HZ','SYNC'],'rate':['1/16','1/8','1/4','1/2','1 BAR','2 BARS','4 BARS'],'dest':['NONE','VELOCITY','PROBABILITY','HUMANIZE','GATE','RATCHET','DECAY','NOTE ON']}
+for lane in [16]:
+ prefix=f'l{lane}_' if lane<16 else ''
+ add(prefix+'mod_mix',prefix+'LFO MIX',-100,100,0)
+ for j in range(2):
+  for key,lo,hi,de in mod_specs:
+   k=prefix+f'mod{j}_'+key
+   if key in mod_options:choice(k,k,mod_options[key],de,refresh_display=key in ('wave','sync','dest'))
+   else:add(k,k,lo,hi,de,dynamic_display=key=='hz',refresh_display=key=='on')
+for i in range(16):add(f'mod_indicator{i}',f'Lane {i+1} modulation',0,1,0,poll=False)
+# Reuse only unpublished E01 visual indices; stable 1.2.2 indices unchanged.
+for j in range(4):trig(f'mod_choose{j}',f'Choose MOD {j+1}',refresh_display=True,hold_ms=100)
+choice('mod_pad','PAD',['NONE']+[f'A{i+1:02}' for i in range(16)],refresh_display=True)
+for j in range(2):
+ for k in range(32):
+  if k==30:add(f'mod_stairs{j}',f'LFO {j+1} static render style',0,2,0,poll=False)
+  elif j==0 and k==31:add('mod_slot','Selected MOD slot',0,3,0,poll=False)
+  elif j==1 and k==31:add('mod_tempo','Preview window',0,1000,120,poll=False,dynamic_display=True)
+  else:add(f'mod_trace{j}_{k}',f'LFO {j+1} static segment {k+1}',0,1023,528,poll=False)
 (B/'params.json').write_text(json.dumps(P,ensure_ascii=True,indent=2)+'\n')
-(B/'vst.json').write_text(json.dumps(dict(name=DISPLAY_NAME,vendor='Timo',uid='PiCN',version=11200,so='piclidean_mpc.so',params='params.json',custom_skin=True,cc=False,nrpn=False,defines={'HAS_SONG_POS':1,'HAS_DISPLAY_REV':0,'DISPLAY_REV_NO_UPDATE':1,'PARAM_TEXT_MAX':64,'PICN_HOST_CONTEXT':1,'MPC_CHUNK_BYTES':32768}),indent=2)+'\n')
-(B/'profiles/incipience.json').write_text(json.dumps(dict(id='incipience-default-notes',sounds=[dict(name=n,note=36+i) for i,n in enumerate(sounds[:11])],simultaneous_lanes=16),indent=2)+'\n')
+(B/'vst.json').write_text(json.dumps(dict(name=DISPLAY_NAME,vendor='Timo',uid='PiCN',version=13005,so='piclidean_mpc.so',params='params.json',custom_skin=True,cc=False,nrpn=False,defines={'HAS_SONG_POS':1,'HAS_DISPLAY_REV':0,'DISPLAY_REV_NO_UPDATE':1,'PARAM_TEXT_MAX':64,'PICN_HOST_CONTEXT':1,'MPC_CHUNK_BYTES':32768}),indent=2)+'\n')
 ref=json.loads((B/'reference/DRUMTRACK-REFERENCE.json').read_text())
 (B/'src/drum_notes.h').write_text('/* Local reference-project mapping, not universal hardware discovery. */\nstatic const unsigned char drum_notes[128]={'+','.join(map(str,ref['notes']))+'};\n')
+(B/'build/reports').mkdir(parents=True,exist_ok=True)
 (B/'build/reports/PARAMETERS.json').write_text(json.dumps({'count':len(P),'keys':[p['key'] for p in P]},indent=2))
 print('Generated',len(P),'parameters')

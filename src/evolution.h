@@ -11,7 +11,7 @@ static int source_index(const Lane *l,int position,double tick){return position<
 /* UNDO/REDO removed; published parameter keys remain inert below. */
 static void init_lane(Lane *l,int i){
  memset(l,0,sizeof *l);static const int old_hits[8]={4,2,11,3,4,5,1,3};
- int d[NF]={16,i<8?old_hits[i]:0,i==1?4:0,1,i==0?112:100,0,100,50,36+i,drum_notes[i],i,i<11?i:11,0,0};
+ int d[NF]={16,i<8?old_hits[i]:0,i==1?4:0,1,i==0?112:100,0,100,50,drum_notes[i],drum_notes[i],i,11,0,0};
  memcpy(l->f,d,sizeof d);pattern(l);l->shift=l->every=1;l->seed=0x519b17u+i*271u;
  for(int j=0;j<32;j++)for(int k=0;k<5;k++)l->values[j][k]=-1;
 }
@@ -104,22 +104,24 @@ static int evolution_get(Engine *e,const char *key,char *b,int size){Lane *l=&e-
 /* PICN4 appends sixteen HOLD flags; older PICN1/2/3 load with GATE. */
 static int write_evolution(Engine *e,char *b,int size){int off=0;
 #define PUT(...) do{int wrote=snprintf(b+off,size-off,__VA_ARGS__);if(wrote<0||wrote>=size-off)return 0;off+=wrote;}while(0)
- PUT("PICN4 %d %d %d %d %d %d %d 1 ",e->selected,e->mode,e->channel,e->bank,e->step,e->rhythm,e->row);
+ PUT("PICN6 %d %d %d %d %d %d %d 1 ",e->selected,e->mode,e->channel,e->bank,e->step,e->rhythm,e->row);
  for(int i=0;i<LANES;i++)for(int j=0;j<NF;j++)PUT("%d ",e->lane[i].f[j]);
  PUT("%d %d ",e->edit_view,e->edit_tool);
  for(int i=0;i<LANES;i++){Lane *l=&e->lane[i];PUT("%d %d %d %d %u %.17g ",l->playmode,l->auto_rotate,l->shift,l->every,l->seed,l->origin);for(int j=0;j<32;j++)for(int k=0;k<5;k++)PUT("%d ",l->values[j][k]);}
  for(int i=0;i<LANES;i++)PUT("%d ",e->lane[i].hold);
+ PUT("%d ",e->mod_selected);for(int i=0;i<MOD_SLOTS;i++){PUT("%d %d ",e->mod_pad[i]+1,e->mod[i].mix);for(int j=0;j<2;j++)for(int k=0;k<MOD_FIELDS;k++)PUT("%d ",e->mod[i].osc[j].f[k]);}
  PUT("END");return off;
 #undef PUT
 }
 static int read_number(const char **p,double *n){char *end;errno=0;*n=strtod(*p,&end);if(errno||end==*p||!isfinite(*n)||(*end&&*end!=' '))return 0;*p=end;while(**p==' ')(*p)++;return 1;}
 static int read_int(const char **p,int low,int high,int *n){double d;if(!read_number(p,&d)||d<low||d>high||d!=floor(d))return 0;*n=(int)d;return 1;}
-static int read_evolution(Engine *e,const char *value){const char *p=value+6;int has_hold=!strncmp(value,"PICN4 ",6);int count=(has_hold||!strncmp(value,"PICN3 ",6))?LANES:8;int h[8],view,tool;Lane lanes[LANES];for(int i=0;i<LANES;i++)init_lane(&lanes[i],i);int highs[]={count-1,1,15,7,31,5,count-1,1};
+static int read_evolution(Engine *e,const char *value){const char *p=value+6;int slot_format=!strncmp(value,"PICN6 ",6);if(!strncmp(value,"PICN5 ",6))return 0;int has_mod=slot_format;int has_hold=has_mod||!strncmp(value,"PICN4 ",6);ModLane mods[MOD_SLOTS];int pads[MOD_SLOTS]={-1,-1,-1,-1},selected_mod=0;for(int i=0;i<MOD_SLOTS;i++)mod_defaults(&mods[i]);int count=(has_hold||!strncmp(value,"PICN3 ",6))?LANES:8;int h[8],view,tool;Lane lanes[LANES];for(int i=0;i<LANES;i++)init_lane(&lanes[i],i);int highs[]={count-1,1,15,7,31,5,count-1,1};
  for(int i=0;i<8;i++)if(!read_int(&p,0,highs[i],&h[i]))return 0;if(h[7]!=1)return 0;
  for(int i=0;i<count;i++){for(int j=0;j<NF;j++)if(!read_int(&p,mins[j],maxs[j],&lanes[i].f[j]))return 0;if(lanes[i].f[1]>lanes[i].f[0]||lanes[i].f[2]>=lanes[i].f[0])return 0;pattern(&lanes[i]);}
  if(!read_int(&p,0,1,&view)||!read_int(&p,0,1,&tool))return 0;
  for(int i=0;i<count;i++){Lane *l=&lanes[i];int seed;if(!read_int(&p,0,4,&l->playmode)||!read_int(&p,0,1,&l->auto_rotate)||!read_int(&p,-8,8,&l->shift)||!read_int(&p,1,16,&l->every)||!read_int(&p,1,INT_MAX,&seed)||!read_number(&p,&l->origin)||l->origin<0||l->origin>1e9)return 0;l->seed=(unsigned)seed;
   for(int j=0;j<32;j++)for(int k=0;k<5;k++){if(!read_int(&p,-1,k==0?1:k==1?127:k==2?100:k==3?8:150,&l->values[j][k]))return 0;if((k==1||k==3)&&l->values[j][k]==0)return 0;}}
  if(has_hold)for(int i=0;i<LANES;i++)if(!read_int(&p,0,1,&lanes[i].hold))return 0;
- if(strcmp(p,"END"))return 0;for(int i=count;i<LANES;i++)lanes[i].f[9]=drum_notes[h[3]*16+i];e->selected=h[0];e->mode=h[1];e->channel=h[2];e->bank=h[3];e->step=h[4];e->rhythm=h[5];e->row=h[6];e->edit_view=view;e->edit_tool=tool;memcpy(e->lane,lanes,sizeof lanes);e->dialog=0;e->q_valid=0;e->panic=1;e->valid=0;e->visual_ready=0;e->playing=0;for(int i=0;i<LANES;i++){e->reset_at[i]=-1;e->head[i]=-1;e->display_tick[i]=0;e->ui_offset[i]=0;}changed_all(e);return 1;
+ if(slot_format){if(!read_int(&p,0,MOD_SLOTS-1,&selected_mod))return 0;for(int i=0;i<MOD_SLOTS;i++){int pad;if(!read_int(&p,0,LANES,&pad))return 0;pads[i]=pad-1;for(int n=0;n<i;n++)if(pads[i]>=0&&pads[n]==pads[i])return 0;if(!read_int(&p,-100,100,&mods[i].mix))return 0;for(int j=0;j<2;j++)for(int k=0;k<MOD_FIELDS;k++)if(!read_int(&p,mod_lo[k],mod_hi[k],&mods[i].osc[j].f[k]))return 0;}}
+ if(strcmp(p,"END"))return 0;for(int i=count;i<LANES;i++)lanes[i].f[9]=drum_notes[h[3]*16+i];e->selected=h[0];e->mode=h[1];e->channel=0;e->bank=h[3];e->step=h[4];e->rhythm=h[5];e->row=h[6];e->edit_view=view;e->edit_tool=tool;memcpy(e->lane,lanes,sizeof lanes);normalize_config(e);mod_init(e);memcpy(e->mod,mods,sizeof mods);memcpy(e->mod_pad,pads,sizeof pads);e->mod_selected=selected_mod;for(int i=0;i<MOD_SLOTS;i++)mod_coefficients(e,i);e->dialog=0;e->q_valid=0;e->panic=1;e->valid=0;e->visual_ready=0;e->playing=0;for(int i=0;i<LANES;i++){e->reset_at[i]=-1;e->head[i]=-1;e->display_tick[i]=0;e->ui_offset[i]=0;}changed_all(e);return 1;
 }
