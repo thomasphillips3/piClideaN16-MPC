@@ -90,7 +90,7 @@ Active buttons turn **amber**.
 
 Both move through the available rhythmic divisions.
 
-### Selective RAND
+### Selective RANDOWM
 
 ![RAND — HITS and ROTATE selected on A03](images/rand-selection-force-1.2.4.png)
 
