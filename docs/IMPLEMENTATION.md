@@ -59,3 +59,8 @@ Each A01–A16 selector uses mutually exclusive native button states for normal 
 ## Rounded skin artwork
 
 A shared 10-pixel radius in native 1280 × 628 coordinates is used for control artwork, with proportionate radii for the main frame and miniature step tiles. Rounded backgrounds include their own fill; selected outlines match their control. Passive transparent PNG overlays implement rounded native-focus feedback with the existing WhenFocussed visibility condition. They introduce no touch actions. Small state dots retain their original enabling conditions and use an inset position. Native MPC header and tab rendering remain host-owned.
+
+
+## Scoped display notifications
+
+PATTERN lane selection does not invalidate MOD visual caches. MOD context changes retain their own notification path. CONFIG headings use native Name labels backed by existing read-only handles; their indices are unchanged.

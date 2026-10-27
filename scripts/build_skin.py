@@ -222,8 +222,14 @@ for start in [0,8]:
  tracks += [readout('line_scope',880,40,370,36,22),field('play_mode',880,116,360,48),*toggle('auto_rotate','AUTO ROTATE',880,190,360,46),field('auto_shift',880,292,168,48),field('auto_every',1070,292,170,48),readout('phase_cycle',880,362,168,38,23),readout('phase_offset',1070,362,170,38,23),button('reset_phase','RESET PHASE',880,430,360,48)]
  track_pages.append(tracks)
 # CONFIG: sixteen fixed pad labels, one unified note field per lane.
-im,dr=image(1280,628);text(dr,(20,6),'PAD',17,C['muted']);text(dr,(290,6),'MODE',17,C['muted'],anchor='mt');text(dr,(510,6),'MIDI NOTE',17,C['muted']);save('config.png',im)
+im,dr=image(1280,628);save('config.png',im)
 config=[art('config.png',0,0,1280,628)]
+# Identical native font and label height to PATTERN parameter names.
+# Reuse existing read-only label handles; preserve all parameter indices.
+for key,x,w,center in [('mapping_label',20,100,False),('port_label',145,290,True),('target_label',510,730,False)]:
+ c=label(0,0,w,27,20,kind='Name')
+ if center:c['componentData']['data']['textStyle']['justification']='horizontallyCentred verticallyCentred'
+ k=local('config_heading_'+key,[c]);h=placed(k,key,x,0,w,27);h['bounds']['acceptsHWFocus']='No';config.append(h)
 for i in range(16):
  y=32+i*36
  im,d=image(100,32);text(d,(0,16),f'A{i+1:02}',22,anchor='lm');fn=f'config_pad{i}.png';save(fn,im);config.append(art(fn,20,y,100,32))

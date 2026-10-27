@@ -1,6 +1,6 @@
 # πClideaN 16 MPC
 
-**Version 1.2.3 · Sixteen-lane Euclidean MIDI sequencer for Akai MPC OS**
+**Version 1.2.4 · Sixteen-lane Euclidean MIDI sequencer for Akai MPC OS**
 
 ![πClideaN 16 MPC](Cover.JPG)
 
@@ -42,7 +42,7 @@ The plugin generates MIDI only. Use a separate Drum Track or drum instrument to 
 
 ## Download and setup
 
-Install [piClideaN-MPC-1.2.3-armv7.zip](Installation/piClideaN-MPC-1.2.3-armv7.zip) with a compatible portable-package installer. See [Installation and removal](docs/INSTALLATION.md).
+Install [piClideaN-MPC-1.2.4-armv7.zip](Installation/piClideaN-MPC-1.2.4-armv7.zip) with a compatible portable-package installer. See [Installation and removal](docs/INSTALLATION.md).
 
 ## Documentation
 

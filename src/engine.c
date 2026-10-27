@@ -109,7 +109,8 @@ static void rand_press(Engine *e){
  rand_clear(e);changed_lane(e,e->selected);
 }
 static void mod_notify_selected(Engine *e);
-static void changed_selected(Engine *e){mod_notify_selected(e);notify_id(e,SELECT16_ID);for(int id=LANES*NF;id<LEGACY_CHANGED+14;id++)notify_id(e,id);for(int q=0;q<8;q++)notify_id(e,LEGACY_CHANGED+14+LANES*4+LANES*160+q);e->revision++;}
+/* PATTERN selection is independent of MOD: do not invalidate every visual readout. */
+static void changed_selected(Engine *e){notify_id(e,SELECT16_ID);for(int id=LANES*NF;id<LEGACY_CHANGED+14;id++)notify_id(e,id);for(int q=0;q<8;q++)notify_id(e,LEGACY_CHANGED+14+LANES*4+LANES*160+q);e->revision++;}
 static void changed_lane(Engine *e,int line){for(int f=0;f<NF;f++)notify_id(e,line*NF+f);for(int f=0;f<4;f++)notify_id(e,LEGACY_CHANGED+14+line*4+f);changed_selected(e);}
 static void changed_step(Engine *e,int line,int step,int field){notify_id(e,LEGACY_CHANGED+14+LANES*4+line*160+step*5+field);changed_selected(e);}
 static void changed_all(Engine *e){for(int id=0;id<CHANGED_COUNT;id++)notify_id(e,id);e->revision++;}

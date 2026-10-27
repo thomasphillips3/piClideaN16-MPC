@@ -45,7 +45,7 @@ for i in range(32):
  add(f'cell{i}',f'Step {i+1} state',0,9,0,poll=False)
 for i in range(8):
  for j in range(32):add(f'g{i}_{j}',f'Retired grid / static MOD segment {i*32+j+1}',0,1023,528,poll=False)
-for k,n in [('line_label','Selected sound'),('target_label','Target'),('status','MIDI status'),('step_label','Selection'),('mapping_label','Mapping'),('port_label','Output port')]+[(f'name{i}',f'Lane {i+1} sound') for i in range(8)]:
+for k,n in [('line_label','Selected sound'),('target_label','MIDI NOTE'),('status','MIDI status'),('step_label','Selection'),('mapping_label','PAD'),('port_label','MODE')]+[(f'name{i}',f'Lane {i+1} sound') for i in range(8)]:
  add(k,n,display='string',poll=k=='status')
 for i in range(32):add(f'preview{i}',f'Rhythm preview {i+1}',0,4,0,poll=False)
 # Append only: preserve every published candidate.1 index, including retired arrows.
@@ -134,7 +134,7 @@ for j in range(2):
   elif j==1 and k==31:add('mod_tempo','Preview window',0,1000,120,poll=False,dynamic_display=True)
   else:add(f'mod_trace{j}_{k}',f'LFO {j+1} static segment {k+1}',0,1023,528,poll=False)
 (B/'params.json').write_text(json.dumps(P,ensure_ascii=True,indent=2)+'\n')
-(B/'vst.json').write_text(json.dumps(dict(name=DISPLAY_NAME,vendor='Timo',uid='PiCN',version=13005,so='piclidean_mpc.so',params='params.json',custom_skin=True,cc=False,nrpn=False,defines={'HAS_SONG_POS':1,'HAS_DISPLAY_REV':0,'DISPLAY_REV_NO_UPDATE':1,'PARAM_TEXT_MAX':64,'PICN_HOST_CONTEXT':1,'MPC_CHUNK_BYTES':32768}),indent=2)+'\n')
+(B/'vst.json').write_text(json.dumps(dict(name=DISPLAY_NAME,vendor='Timo',uid='PiCN',version=10204,so='piclidean_mpc.so',params='params.json',custom_skin=True,cc=False,nrpn=False,defines={'HAS_SONG_POS':1,'HAS_DISPLAY_REV':0,'DISPLAY_REV_NO_UPDATE':1,'PARAM_TEXT_MAX':64,'PICN_HOST_CONTEXT':1,'MPC_CHUNK_BYTES':32768}),indent=2)+'\n')
 ref=json.loads((B/'reference/DRUMTRACK-REFERENCE.json').read_text())
 (B/'src/drum_notes.h').write_text('/* Local reference-project mapping, not universal hardware discovery. */\nstatic const unsigned char drum_notes[128]={'+','.join(map(str,ref['notes']))+'};\n')
 (B/'build/reports').mkdir(parents=True,exist_ok=True)
