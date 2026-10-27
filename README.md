@@ -38,7 +38,7 @@ The plugin generates MIDI only. Use a separate Drum Track or drum instrument to 
 
 ### CONFIG — MIDI notes and GATE / HOLD
 
-![CONFIG: sixteen MIDI notes and GATE / HOLD controls — offline layout](docs/images/config-1.2.3-offline.png)
+![CONFIG on Akai Force: sixteen MIDI notes and independent GATE / HOLD controls](docs/images/config-force-1.2.4.png)
 
 ## Download and setup
 

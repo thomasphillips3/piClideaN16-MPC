@@ -17,7 +17,7 @@ On a separate Drum Track or drum instrument, select `piClideaN MPC Out` as the M
 
 Open CONFIG. Each fixed lane A01–A16 has a GATE / HOLD button and an editable MIDI NOTE from 0 to 127. The default notes are 36–51. Set the notes expected by the target instrument. There is no instrument profile or bank selector. The output uses MIDI channel 1.
 
-![CONFIG — offline layout of the sixteen lanes](images/config-1.2.3-offline.png)
+![CONFIG on Akai Force — sixteen lanes with MIDI notes and independent GATE / HOLD modes](images/config-force-1.2.4.png)
 
 Start the host transport. The sequencer follows host tempo and position; Stop releases its notes. Save the host project to store settings.
 
@@ -172,6 +172,8 @@ RESET PHASE requests a fresh phase at the next step boundary while playing. CYCL
 
 ## 6. CONFIG — GATE / HOLD
 
+![CONFIG on Akai Force — each lane has its own GATE / HOLD mode](images/config-force-1.2.4.png)
+
 CONFIG shows all sixteen lanes on one page. Each MODE button affects only its lane. The note field accepts values 0–127.
 
 ### Using the GATE / HOLD button
@@ -218,7 +220,7 @@ The plugin does not create native clips, control physical pad LEDs or synthesize
 
 MOD provides four independent slots: MOD 1–MOD 4. Select a slot, then assign its PAD to NONE or A01–A16 using the pad selection panel. Each pad can belong to one slot. All slots default to NONE and both LFOs default to OFF. Selecting a slot does not change the lane selected in PATTERN.
 
-![MOD — offline layout](images/mod-1.2.3-offline.png)
+![MOD on Akai Force — MOD 1 assigned to A16, Sample & Hold driving Note On, with the threshold guide](images/mod-force-1.2.4.png)
 
 Each LFO has an ON/OFF switch, waveform, SYNC or Hz rate, DEPTH, OFFSET, PHASE, DESTINATION and THRESHOLD. SYNC derives the rate from host tempo; Hz provides a frequency control. FREE CURVE is edited with eight sliders. The curve preview is static: it shows a four-bar window at the current tempo and changes when relevant settings change. Sample & Hold includes vertical transitions. At very high rates, a compact envelope is shown rather than a misleading undersampled curve.
 
