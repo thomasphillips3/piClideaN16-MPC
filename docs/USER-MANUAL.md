@@ -101,17 +101,27 @@ Here, A03 is the selected lane and the white outline identifies step 04. LINE re
 
 In SELECT, ERASE clears the selected step's custom expression values while retaining its trigger. In DRAW, ERASE removes its trigger while retaining its expression settings. Changes are immediate; there is no undo history.
 
-### Muted lanes and activity
+## 5. MOD — dual LFO modulation
+
+MOD provides four independent slots: MOD 1–MOD 4. Select a slot, then assign its PAD to NONE or A01–A16 using the pad selection panel. Each pad can belong to one slot. All slots default to NONE and both LFOs default to OFF. Selecting a slot does not change the lane selected in PATTERN.
+
+![MOD on Akai Force — MOD 1 assigned to A16, Sample & Hold driving Note On, with the threshold guide](images/mod-force-1.2.4.png)
+
+Each LFO has an ON/OFF switch, waveform, SYNC or Hz rate, DEPTH, OFFSET, PHASE, DESTINATION and THRESHOLD. SYNC derives the rate from host tempo; Hz provides a frequency control. FREE CURVE is edited with eight sliders. The curve preview is static: it shows a four-bar window at the current tempo and changes when relevant settings change. Sample & Hold includes vertical transitions. At very high rates, a compact envelope is shown rather than a misleading undersampled curve.
+
+MIX is centered at 0: negative values favor LFO 1, positive values favor LFO 2. Each LFO keeps its own destination; MIX blends the source waveforms. NONE does not apply a destination, but an enabled source can still contribute to the mix.
+
+Parameter modulation changes playback values without rewriting stored lane or step settings. Note On uses threshold crossings: a rising crossing starts a note, a falling crossing releases it. While the LFO owns a note, regular sequencer triggers at the same note/channel are suppressed; the sequencer keeps advancing and resumes after release. A threshold line is displayed without a numeric label. The preview shows each individual source, so its crossing is a guide when the actual signal includes both sources.
+
+OFF LFOs and modulation on inaudible lanes suspend their phase; they resume from the retained phase. Stop, muting, reassignment and ownership changes use the note-release safeguards. No audio is generated or sampled.
+
+## 6. Muted lanes and activity
 
 The A01–A16 selectors are dimmed when their lanes are explicitly muted. A muted selected lane keeps its white selection border and uses an attenuated red label. Touching a muted lane selects it without unmuting it. Solo exclusion alone does not dim the other lane selectors.
 
 The A01–A16 buttons briefly illuminate in azure when their scheduled Note On reaches playback time. This shows the activity of all sixteen lanes while PATTERN displays the selected lane's steps. The selected lane keeps its white outline.
 
 Muted lanes, solo-excluded lanes, rests and rejected probability decisions do not flash. Ratchets contribute to the pulses; rapid repeats can merge visually. HOLD indicates retriggers, not the duration of the sustained note. Each impulse lasts approximately 140 ms, subject to the native screen refresh cadence. It indicates emitted MIDI activity rather than measured audio from the target.
-
-![Live lane activity on Akai Force: A03 flashes in azure while A13 remains selected](images/activity.png)
-
-In this capture, A03 flashes in azure because it has triggered a note, while A13 remains selected with its white outline. The displayed pattern and controls belong to A13: lane activity feedback does not change the selected lane.
 
 ### Colors
 
@@ -124,7 +134,7 @@ In this capture, A03 flashes in azure because it has triggered a note, while A13
 
 A violet rest remains silent until its trigger is enabled. A custom value can equal the line default while remaining independently stored.
 
-## 5. TR pages — playback and rotation
+## 7. TR pages — playback and rotation
 
 ![TR 01–08 on Akai Force: lane A07 selected and AUTO ROTATE enabled](images/tracks-force-1.2.4.png)
 
@@ -170,7 +180,7 @@ AUTO ROTATE shifts the pattern content after the chosen number of complete lane 
 
 RESET PHASE requests a fresh phase at the next step boundary while playing. CYCLE and SHIFT display the current phase. The selected step follows its stored data when rotation moves it to another visible position.
 
-## 6. CONFIG — GATE / HOLD
+## 8. CONFIG — GATE / HOLD
 
 ![CONFIG on Akai Force — each lane has its own GATE / HOLD mode](images/config-force-1.2.4.png)
 
@@ -197,7 +207,7 @@ The CONFIG button selects the **note-duration mode**; the PATTERN knob sets the 
 
 HOLD cannot extend a sample beyond its natural end. The target must respond to Note Off and use a suitable envelope/release. A One Shot sample may ignore Note Off. Use distinct notes for independent lanes: two lanes sharing a note and channel are subject to overlap protection.
 
-## 7. Q-Links and automation
+## 9. Q-Links and automation
 
 On PATTERN in LINE mode, Q1–Q4 control line Velocity, Probability, Humanize and Gate. These four contextual controls are inactive in EDIT, where the dimmed LINE row remains visible as a reference. Q5–Q8 control Steps, Hits, Rotate and Division in LINE, or selected-step Velocity, Probability, Ratchet and Decay in EDIT.
 
@@ -207,25 +217,10 @@ Canonical lane and step parameters are exposed separately for host automation. C
 
 Q-Link automation inside the host is distinct from MIDI CC input. This plugin does not record or replay CC messages.
 
-## 8. Save and playback
+## 10. Save and playback
 
 Save the Force project to store all sixteen patterns, step overrides, note assignments, GATE / HOLD choices and playback settings. The sequencer follows host tempo, position and loop boundaries. Stop releases its owned notes.
 
 Probability is calculated once for a complete ratchet group and is deterministic for a given lane seed and musical position. A repeating host loop can therefore repeat the same probability decisions.
 
 The plugin does not create native clips, control physical pad LEDs or synthesize audio. Scheduling has bounded event and loop budgets; see the engine documentation for the limits.
-
-
-## 9. MOD — dual LFO modulation
-
-MOD provides four independent slots: MOD 1–MOD 4. Select a slot, then assign its PAD to NONE or A01–A16 using the pad selection panel. Each pad can belong to one slot. All slots default to NONE and both LFOs default to OFF. Selecting a slot does not change the lane selected in PATTERN.
-
-![MOD on Akai Force — MOD 1 assigned to A16, Sample & Hold driving Note On, with the threshold guide](images/mod-force-1.2.4.png)
-
-Each LFO has an ON/OFF switch, waveform, SYNC or Hz rate, DEPTH, OFFSET, PHASE, DESTINATION and THRESHOLD. SYNC derives the rate from host tempo; Hz provides a frequency control. FREE CURVE is edited with eight sliders. The curve preview is static: it shows a four-bar window at the current tempo and changes when relevant settings change. Sample & Hold includes vertical transitions. At very high rates, a compact envelope is shown rather than a misleading undersampled curve.
-
-MIX is centered at 0: negative values favor LFO 1, positive values favor LFO 2. Each LFO keeps its own destination; MIX blends the source waveforms. NONE does not apply a destination, but an enabled source can still contribute to the mix.
-
-Parameter modulation changes playback values without rewriting stored lane or step settings. Note On uses threshold crossings: a rising crossing starts a note, a falling crossing releases it. While the LFO owns a note, regular sequencer triggers at the same note/channel are suppressed; the sequencer keeps advancing and resumes after release. A threshold line is displayed without a numeric label. The preview shows each individual source, so its crossing is a guide when the actual signal includes both sources.
-
-OFF LFOs and modulation on inaudible lanes suspend their phase; they resume from the retained phase. Stop, muting, reassignment and ownership changes use the note-release safeguards. No audio is generated or sampled.
