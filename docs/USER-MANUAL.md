@@ -23,7 +23,7 @@ Start the host transport. The sequencer follows host tempo and position; Stop re
 
 ## 3. PATTERN — LINE
 
-![PATTERN LINE — lane A05 selected, rounded controls on Akai Force](images/pattern-line-force-1.2.2.png)
+![PATTERN LINE — lane A03 selected, with 31 steps and 19 hits](images/pattern-line-force-1.2.4.png)
 
 Choose a lane with A01–A16, then choose LINE.
 
@@ -64,9 +64,9 @@ To hold a note until the next effective trigger on the lane, use HOLD on the CON
 
 ### Selective RAND
 
-![Selective RAND on Akai Force: HITS and ROTATE selected on lane A11, white focus outline on ROTATE](images/rand-selection-force-1.2.2.png)
+![Selective RAND on Akai Force: HITS and ROTATE selected on lane A03, white focus outline on HITS](images/rand-selection-force-1.2.4.png)
 
-In this example, lane A11 is active and only HITS and ROTATE are selected in green. Pressing RAND again randomizes those two settings. The other six lane controls keep their values. The small white dot on RAND indicates selection mode; a white outline around a control indicates focus, not an additional randomization target.
+In this example, lane A03 is active and only HITS and ROTATE are selected in green. Pressing RAND again randomizes those two settings. The other six lane controls keep their values. The small white dot on RAND indicates selection mode; a white outline around a control indicates focus, not an additional randomization target.
 
 - Press RAND once to enter selection mode. RAND turns green and italic, with a white dot in its upper-right corner.
 - Tap any of the eight control areas to include or exclude that parameter. Included areas turn green. Touching them does not change their values.
@@ -80,7 +80,7 @@ Available targets: Velocity, Probability, Humanize, Gate, Steps, Hits, Rotate an
 
 ## 4. PATTERN — EDIT
 
-![PATTERN EDIT — lane A03, dimmed LINE references and custom STEP values](images/pattern-edit-force-1.2.2.png)
+![PATTERN EDIT — lane A03, dimmed LINE references and custom STEP values](images/pattern-edit-force-1.2.4.png)
 
 In EDIT, the upper LINE row is dimmed and shows the lane defaults as read-only references. Touch, the data wheel and Q1–Q4 cannot edit these four controls. Return to LINE to change them. Existing host automation of canonical lane parameters continues to run. The lower STEP row remains active and edits the selected step:
 
@@ -95,9 +95,9 @@ A small dot marks a custom step value. Without a custom value, velocity and prob
 
 SELECT touches a step without changing its trigger. DRAW toggles its trigger on each touch. Changing expression does not create a trigger.
 
-![EDIT SELECT — lane A07 and step 09 selected, with a white step outline](images/pattern-select-force-1.2.2.png)
+![EDIT SELECT — lane A03 and step 04 selected, with custom velocity 49](images/pattern-edit-force-1.2.4.png)
 
-Here, A07 is the selected lane and the white outline identifies step 09. LINE remains dimmed; STEP shows the selected step’s values. Without custom overrides, velocity and probability follow the lane and their custom-value dots are absent. Selecting the step does not alter its trigger.
+Here, A03 is the selected lane and the white outline identifies step 04. LINE remains dimmed; STEP shows the selected step’s values. Velocity is overridden to 49: the dot on VELOCITY and the purple step indicate this custom value. Probability still follows the lane at 46%. Selecting the step does not alter its trigger.
 
 In SELECT, ERASE clears the selected step's custom expression values while retaining its trigger. In DRAW, ERASE removes its trigger while retaining its expression settings. Changes are immediate; there is no undo history.
 
@@ -126,9 +126,9 @@ A violet rest remains silent until its trigger is enabled. A custom value can eq
 
 ## 5. TR pages — playback and rotation
 
-![TR 01–08 on Akai Force: lane A07 selected and AUTO ROTATE enabled](images/tracks-force-1.2.2.png)
+![TR 01–08 on Akai Force: lane A07 selected and AUTO ROTATE enabled](images/tracks-force-1.2.4.png)
 
-TR 01-08 and TR 09-16 show eight lanes each. Tap A01–A16 to select a lane; its button gains a white outline and the controls on the right follow that lane. In the screenshot, A07 is selected.
+01 - 08 and 09 - 16 show eight lanes each. Tap A01–A16 to select a lane; its button gains a white outline and the controls on the right follow that lane. In the screenshot, A07 is selected.
 
 ### Reading the lane overview
 
@@ -142,7 +142,7 @@ Each row shows the lane button, its assigned sound or pad name, a 32-step previe
 
 ### Mute and Solo
 
-- Tap **M** to mute that lane. Its M button stays amber until tapped again. In the screenshot, A03 is muted.
+- Tap **M** to mute that lane. Its M button stays amber until tapped again.
 - Tap **S** to solo that lane. Its S button stays amber until tapped again. Multiple lanes can be soloed together.
 - When any lane is soloed, only soloed lanes can play. Mute takes precedence, including on a soloed lane.
 
