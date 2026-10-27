@@ -4,223 +4,154 @@ Version 1.2.4
 
 ## 1. Overview
 
-πClideaN provides sixteen independent rhythmic lanes. 
-Each lane triggers one MIDI note on a shared output channel. 
-Use the lanes for individual Drum Track pads or the sounds of a drum instrument.
+Sixteen independent lanes generate MIDI notes for a Drum Track or drum instrument. The plugin produces no audio.
 
-The five pages are PATTERN, MOD, 01 - 08, 09 - 16 and CONFIG. 
-Lane buttons A01–A16 select a sequencer lane.
+Five pages: PATTERN, MOD, 01 - 08, 09 - 16 and CONFIG. A01–A16 select a lane; its white outline stays visible during playback.
 
 ## 2. Connect a target
 
-On a separate Drum Track or drum instrument, select `piClideaN MPC Out` as the MIDI input and receive channel 1 or all channels. Each instance has its own output port; additional instances use numbered port names. Avoid receiving the same notes through two routes.
+- Load πClideaN on a plugin track and create a separate Drum Track or drum instrument.
+- On the target, enable `piClideaN MPC Out` as MIDI input and receive channel 1 or all channels. Each instance has its own port; additional ports are numbered.
+- In CONFIG, set each lane’s MIDI NOTE to the note expected by its target sound. Defaults are 36–51; all output uses channel 1.
+- Start the host transport. Tempo, position and loops follow the host. Save the host project to retain settings.
 
-Open CONFIG. Each fixed lane A01–A16 has a GATE / HOLD button and an editable MIDI NOTE from 0 to 127. The default notes are 36–51. Set the notes expected by the target instrument. There is no instrument profile or bank selector. The output uses MIDI channel 1.
-
-![CONFIG on Akai Force — sixteen lanes with MIDI notes and independent GATE / HOLD modes](images/config-force-1.2.4.png)
-
-Start the host transport. The sequencer follows host tempo and position; Stop releases its notes. Save the host project to store settings.
+Avoid duplicate MIDI input routes and use distinct notes for independent sounds.
 
 ## 3. PATTERN — LINE
 
-![PATTERN LINE — lane A03 selected, with 31 steps and 19 hits](images/pattern-line-force-1.2.4.png)
+![PATTERN LINE — A03 selected](images/pattern-line-force-1.2.4.png)
 
-Choose a lane with A01–A16, then choose LINE.
-
-The upper LINE row sets common expression:
+Select A01–A16, then LINE. The upper row applies to the whole lane:
 
 - VELOCITY: 1–127.
-- PROBABILITY: 0–100 percent chance of playing a trigger group.
-- HUMANIZE: random velocity variation, 0–50, applied once per trigger group.
-- GATE: 10–95 percent of the step or ratchet subdivision, used in GATE mode.
+- PROBABILITY: 0–100% chance of playing a trigger group, including its ratchets.
+- HUMANIZE: random velocity variation, 0–50, chosen once per group.
+- GATE: note duration, 10–95% of a step or ratchet subdivision. Used only in GATE mode.
 
-The lower STEPS row sets the Euclidean pattern:
+The lower STEPS row generates the rhythm:
 
-- STEPS: lane length, 1–32.
-- HITS: number of evenly distributed hits, 0–STEPS.
+- STEPS: 1–32 steps.
+- HITS: 0–STEPS evenly distributed hits.
 - ROTATE: circular offset of the generated pattern.
-- DIVISION: step duration, 1/32, 1/16, 1/8, 1/4 or 1/2 note.
+- DIVISION: 1/32, 1/16, 1/8, 1/4 or 1/2 note per step.
 
-Manual trigger edits take precedence over the generated pattern. Steps outside the current length are dimmed; their stored data is retained.
+Manual trigger edits override the generated pattern. Data beyond the current length remains stored.
 
-MUTE silences the lane. SOLO limits playback to soloed lanes; multiple lanes can be soloed. Mute takes precedence over solo. Active buttons use amber.
-
-1/2 makes the lane run more slowly by moving to the next available division. x2 moves to the faster division.
-
-### Gate length — how long a MIDI note stays held
-
-The GATE knob in the upper LINE row controls the time between each Note On and its Note Off when that lane is in GATE mode on the CONFIG page. Its range is 10–95 percent of one step duration. This is a MIDI note duration, not a volume control or a sample-length setting.
-
-- Lower values release the note sooner: useful for short, detached hits when the target responds to Note Off.
-- Higher values hold the note longer, up to 95 percent of the step duration.
-- At 120 BPM with DIVISION set to 1/16, a step lasts 125 ms. GATE 50 sends Note Off about 62.5 ms after Note On; GATE 10 gives about 12.5 ms, and GATE 95 about 118.75 ms.
-- With RATCHET, the percentage applies to each repetition's subdivision. At the same tempo and division, RATCHET 4 divides the step into four 31.25 ms intervals; GATE 50 gives each note about 15.625 ms before its Note Off.
-
-The GATE value applies to the entire lane, including steps with their own velocity, probability or ratchet settings. It does not fill rests or wait for the next active step. Note durations can be shortened at a host loop boundary.
-
-The audible effect depends on the target instrument's playback mode and envelope. A One Shot sample may play to its end regardless of Note Off. A gated sample or synthesizer may begin its release stage on Note Off, so its sound can continue after the MIDI note is released. GATE cannot stretch a sample or make it longer than its natural playback.
-
-To hold a note until the next effective trigger on the lane, use HOLD on the CONFIG page. In HOLD mode, the GATE knob's value remains stored but does not determine the note's duration. See **CONFIG pages — GATE / HOLD** below.
+MUTE silences the lane; SOLO plays only soloed lanes. Multiple solos are allowed; Mute takes precedence. Active toggles are amber. 1/2 selects a slower division; x2 selects a faster one, within the available range.
 
 ### Selective RAND
 
-![Selective RAND on Akai Force: HITS and ROTATE selected on lane A03, white focus outline on HITS](images/rand-selection-force-1.2.4.png)
+![RAND — HITS and ROTATE selected on A03](images/rand-selection-force-1.2.4.png)
 
-In this example, lane A03 is active and only HITS and ROTATE are selected in green. Pressing RAND again randomizes those two settings. The other six lane controls keep their values. The small white dot on RAND indicates selection mode; a white outline around a control indicates focus, not an additional randomization target.
+- Press RAND: it turns green and italic, with a small white dot.
+- Tap control areas to include or exclude parameters. Green means selected; values remain unchanged.
+- Press RAND again: only selected parameters are randomized, then selection closes.
 
-- Press RAND once to enter selection mode. RAND turns green and italic, with a white dot in its upper-right corner.
-- Tap any of the eight control areas to include or exclude that parameter. Included areas turn green. Touching them does not change their values.
-- Press RAND again to randomize only the selected parameters on the current lane. RAND and all selection indicators return to their normal appearance.
-- With no parameters selected, the second press closes selection without changing the lane.
-- Selection is cancelled when choosing another lane or changing LINE/EDIT mode. Selection is not stored in the project.
-- The 1/2 and x2 controls remain visible; their actions and contextual Q-Link editing are inactive during selection.
+No selection means no change. Changing lane or LINE/EDIT mode cancels selection. Q-Link editing and 1/2 / x2 are inactive during selection.
 
-Available targets: Velocity, Probability, Humanize, Gate, Steps, Hits, Rotate and Division. New Steps values respect unselected Hits and Rotate. Manual trigger overrides are cleared only when Steps, Hits or Rotate actually changes; per-step velocity, probability, ratchet and decay are retained. A random result may equal the previous value.
-
+All eight LINE controls are eligible. Unselected Hits and Rotate constrain a new Steps value. Changing Steps, Hits or Rotate clears manual trigger overrides; stored step expression is retained. A random result can equal the previous value.
 
 ## 4. PATTERN — EDIT
 
-![PATTERN EDIT — lane A03, dimmed LINE references and custom STEP values](images/pattern-edit-force-1.2.4.png)
+![EDIT SELECT — A03, step 04, custom velocity 49](images/pattern-edit-force-1.2.4.png)
 
-In EDIT, the upper LINE row is dimmed and shows the lane defaults as read-only references. Touch, the data wheel and Q1–Q4 cannot edit these four controls. Return to LINE to change them. Existing host automation of canonical lane parameters continues to run. The lower STEP row remains active and edits the selected step:
+Select EDIT, then a step. LINE is dimmed and read-only; return to LINE to change its defaults. STEP edits the selected step:
 
-- VELOCITY: replaces the lane velocity for this step.
-- PROBABILITY: replaces the lane probability; it is not multiplied by it.
-- RATCHET: 1–8 hits evenly distributed within the step.
-- DECAY: ratchet velocity multiplier, 0–150 percent. 100 keeps the same velocity; lower values fade repeats, higher values increase them up to 127. With a single hit it has no effect. At 0, only the first hit plays.
+- VELOCITY: 1–127, replacing lane velocity.
+- PROBABILITY: 0–100%, replacing—not multiplying—lane probability.
+- RATCHET: 1–8 hits within the step.
+- DECAY: 0–150% velocity multiplier between repeats. 100 keeps velocity constant; 0 leaves only the first hit. Values are limited to 127. No effect with one hit.
 
-A small dot marks a custom step value. Without a custom value, velocity and probability follow the line; ratchet defaults to 1 and decay to 100.
+Without overrides, velocity and probability follow the lane; ratchet is 1 and decay is 100. A dot marks a stored custom value, even if it equals the lane default. The example shows step 04 with velocity 49 and inherited probability 46%.
 
-### Select, draw and erase
+SELECT chooses a step without changing its trigger. DRAW toggles the touched trigger. Editing expression alone does not add a note.
 
-SELECT touches a step without changing its trigger. DRAW toggles its trigger on each touch. Changing expression does not create a trigger.
-
-![EDIT SELECT — lane A03 and step 04 selected, with custom velocity 49](images/pattern-edit-force-1.2.4.png)
-
-Here, A03 is the selected lane and the white outline identifies step 04. LINE remains dimmed; STEP shows the selected step’s values. Velocity is overridden to 49: the dot on VELOCITY and the purple step indicate this custom value. Probability still follows the lane at 46%. Selecting the step does not alter its trigger.
-
-In SELECT, ERASE clears the selected step's custom expression values while retaining its trigger. In DRAW, ERASE removes its trigger while retaining its expression settings. Changes are immediate; there is no undo history.
+ERASE is contextual: in SELECT it clears step-expression overrides; in DRAW it removes the trigger. The other data is retained. Changes are immediate; there is no undo.
 
 ## 5. MOD — dual LFO modulation
 
-MOD provides four independent slots: MOD 1–MOD 4. Select a slot, then assign its PAD to NONE or A01–A16 using the pad selection panel. Each pad can belong to one slot. All slots default to NONE and both LFOs default to OFF. Selecting a slot does not change the lane selected in PATTERN.
+![MOD 1 assigned to A16 — Sample & Hold and Note On](images/mod-force-1.2.4.png)
 
-![MOD on Akai Force — MOD 1 assigned to A16, Sample & Hold driving Note On, with the threshold guide](images/mod-force-1.2.4.png)
+Choose MOD 1–MOD 4, then assign a PAD through the selection panel. One slot per lane. Defaults: PAD NONE, both LFOs OFF. MOD selection is independent of PATTERN.
 
-Each LFO has an ON/OFF switch, waveform, SYNC or Hz rate, DEPTH, OFFSET, PHASE, DESTINATION and THRESHOLD. SYNC derives the rate from host tempo; Hz provides a frequency control. FREE CURVE is edited with eight sliders. The curve preview is static: it shows a four-bar window at the current tempo and changes when relevant settings change. Sample & Hold includes vertical transitions. At very high rates, a compact envelope is shown rather than a misleading undersampled curve.
+Each LFO provides:
 
-MIX is centered at 0: negative values favor LFO 1, positive values favor LFO 2. Each LFO keeps its own destination; MIX blends the source waveforms. NONE does not apply a destination, but an enabled source can still contribute to the mix.
+- ON/OFF and waveform: Sine, Triangle, Ramp Up/Down, Square, Sample & Hold, Random Smooth or Free Curve.
+- SYNC: a tempo-based cycle from 1/16 note to 4 bars. HZ: 0.05–20 Hz.
+- DEPTH: −100 to +100; negative values invert the modulation. OFFSET shifts its level; PHASE sets the cycle offset, 0–359°.
+- DESTINATION: NONE, Velocity, Probability, Humanize, Gate, Ratchet, Decay or Note On.
+- THRESHOLD: the switching level for Note On. Free Curve uses eight sliders.
 
-Parameter modulation changes playback values without rewriting stored lane or step settings. Note On uses threshold crossings: a rising crossing starts a note, a falling crossing releases it. While the LFO owns a note, regular sequencer triggers at the same note/channel are suppressed; the sequencer keeps advancing and resumes after release. A threshold line is displayed without a numeric label. The preview shows each individual source, so its crossing is a guide when the actual signal includes both sources.
+MIX blends the waveforms: −100 favors LFO 1, 0 blends equally, +100 favors LFO 2. Each LFO retains its destination. An enabled source with destination NONE can still feed the mix.
 
-OFF LFOs and modulation on inaudible lanes suspend their phase; they resume from the retained phase. Stop, muting, reassignment and ownership changes use the note-release safeguards. No audio is generated or sampled.
+Parameter modulation affects playback without rewriting stored values. For NOTE ON, an upward threshold crossing starts a note; a downward crossing releases it. While that note is held, step triggers on the same note/channel are suppressed. The sequencer keeps advancing and resumes at the next normal trigger after release.
+
+Previews are static four-bar windows at the current tempo. Relevant edits redraw them; high frequencies use an amplitude band. Random shapes show an example, not the next played sequence. The dashed amber line marks the threshold. Each curve shows an individual source; actual crossings depend on the mixed signal.
+
+OFF and inaudible lanes suspend LFO phase. Re-enabling resumes from that phase without immediately firing a note already above threshold. Reassigning a pad releases its previously owned LFO note.
 
 ## 6. Muted lanes and activity
 
-The A01–A16 selectors are dimmed when their lanes are explicitly muted. A muted selected lane keeps its white selection border and uses an attenuated red label. Touching a muted lane selects it without unmuting it. Solo exclusion alone does not dim the other lane selectors.
+Explicitly muted lane buttons are dimmed. A selected muted lane keeps its white border; selecting it does not unmute it. Solo exclusion alone does not dim selectors.
 
-The A01–A16 buttons briefly illuminate in azure when their scheduled Note On reaches playback time. This shows the activity of all sixteen lanes while PATTERN displays the selected lane's steps. The selected lane keeps its white outline.
+A01–A16 pulse azure when their emitted notes reach playback time, without changing selection. Muted lanes, solo-excluded lanes, rests and probability-rejected hits do not flash. Pulses last about 140 ms; fast ratchets can merge visually. HOLD flashes on retriggers, not throughout the held note. This is MIDI activity, not measured sound.
 
-Muted lanes, solo-excluded lanes, rests and rejected probability decisions do not flash. Ratchets contribute to the pulses; rapid repeats can merge visually. HOLD indicates retriggers, not the duration of the sustained note. Each impulse lasts approximately 140 ms, subject to the native screen refresh cadence. It indicates emitted MIDI activity rather than measured audio from the target.
+Colors and indicators:
 
-### Colors
+- Red step: trigger on. Violet: custom step expression; a violet rest remains silent.
+- White outer step border: selection. Red inner border: playhead.
+- Amber button: active mode or toggle. Green: RAND selection.
+- Small step/control dot: custom expression. Small lane-button dot: enabled modulation destination.
 
-- Red: an active trigger without custom expression.
-- Violet: a step with custom expression, including a silent step.
-- Dark: an unmodified rest.
-- White outer border: selected step.
-- Red inner border: playback position.
-- Amber buttons: active modes and toggles.
+## 7. 01 - 08 / 09 - 16 — playback and rotation
 
-A violet rest remains silent until its trigger is enabled. A custom value can equal the line default while remaining independently stored.
+![Lanes 01–08 — A07 selected, Auto Rotate enabled](images/tracks-force-1.2.4.png)
 
-## 7. TR pages — playback and rotation
+Each page shows eight lanes, 32-step previews and M / S buttons. Select a lane to edit the controls on the right. Mutes and solos act on their own row. Previews retain patterns on muted lanes; the light playback outline is independent of step color.
 
-![TR 01–08 on Akai Force: lane A07 selected and AUTO ROTATE enabled](images/tracks-force-1.2.4.png)
+MODE selects traversal:
 
-01 - 08 and 09 - 16 show eight lanes each. Tap A01–A16 to select a lane; its button gains a white outline and the controls on the right follow that lane. In the screenshot, A07 is selected.
+- FWD / REV: forward / reverse.
+- PEND1: back and forth, repeating endpoints: 1–2–3–4–4–3–2–1.
+- PEND2: back and forth without repeated endpoints: 1–2–3–4–3–2.
+- URN: every step once per shuffled cycle.
 
-### Reading the lane overview
+AUTO ROTATE shifts pattern content by SHIFT (−8 to +8 steps) after EVERY (1–16) lane cycles. A cycle follows the playback mode, not necessarily a host bar. Step expression moves with its trigger; the selected step follows its data.
 
-Each row shows the lane button, its assigned sound or pad name, a 32-step preview, and M / S buttons.
+RESET PHASE requests a fresh phase at the next step boundary during playback. CYCLE and SHIFT show current cycle and rotation.
 
-- Dark tiles represent rests; steps beyond the lane length are dimmed.
-- Dark red tiles with red outlines indicate active hits without custom step-expression values.
-- Purple tiles indicate steps with custom expression values. They can also represent a rest with stored values; purple alone does not guarantee a note will play.
-- A light outline marks the playback position while the transport is running. It is separate from the red or purple step colour.
-- Patterns can remain visible on muted lanes: the overview shows stored rhythm data, not proof of an audible note.
+## 8. CONFIG — MIDI notes and GATE / HOLD
 
-### Mute and Solo
+![CONFIG — sixteen MIDI notes and GATE / HOLD modes](images/config-force-1.2.4.png)
 
-- Tap **M** to mute that lane. Its M button stays amber until tapped again.
-- Tap **S** to solo that lane. Its S button stays amber until tapped again. Multiple lanes can be soloed together.
-- When any lane is soloed, only soloed lanes can play. Mute takes precedence, including on a soloed lane.
+MIDI NOTE sets each lane’s output note, 0–127. Tap its MODE button to switch:
 
-These buttons work by touch and affect their own row, independently of which lane is selected for the right-hand controls.
+- GATE, dark: release each note after the PATTERN GATE duration.
+- HOLD, amber: hold until the next effective trigger on that lane; release the old note before retriggering.
 
-### Playback mode
+For example, at 120 BPM and 1/16 division, a step lasts 125 ms; GATE 50 holds for 62.5 ms. With ratchet 4, it holds each repeat for about 15.6 ms. Host loop boundaries can shorten notes.
 
-Playback modes:
+In HOLD, rests and probability-rejected hits do not end the note. Ratchets retrigger; the final repeat remains held. The Gate percentage stays stored but is inactive. Switching modes, Stop, Mute and Solo exclusion release owned notes.
 
-- FWD: first to last step.
-- REV: last to first step.
-- PEND1: forward and backward, repeating both endpoints.
-- PEND2: forward and backward without repeating endpoints.
-- URN: visits every step once in a shuffled order per cycle.
-
-For four steps, PEND1 visits 1–2–3–4–4–3–2–1; PEND2 visits 1–2–3–4–3–2. A one-step lane always visits that single step.
-
-### Automatic rotation
-
-Tap AUTO ROTATE to switch rotation on or off for the selected lane. The button stays amber when enabled, as shown for A07 in the screenshot.
-
-AUTO ROTATE shifts the pattern content after the chosen number of complete lane cycles. SHIFT is -8 to +8 steps; EVERY is 1–16 cycles. A cycle is based on the playback mode, not necessarily a Force bar. Per-step values move with their triggers. PATTERN and TR show the same rotating content.
-
-### Phase and reset
-
-RESET PHASE requests a fresh phase at the next step boundary while playing. CYCLE and SHIFT display the current phase. The selected step follows its stored data when rotation moves it to another visible position.
-
-## 8. CONFIG — GATE / HOLD
-
-![CONFIG on Akai Force — each lane has its own GATE / HOLD mode](images/config-force-1.2.4.png)
-
-CONFIG shows all sixteen lanes on one page. Each MODE button affects only its lane. The note field accepts values 0–127.
-
-### Using the GATE / HOLD button
-
-- **GATE — normal dark button:** the default mode. Each played note is released automatically after the duration set by the GATE knob on PATTERN. Use this when notes should have a defined, usually short duration.
-- **Tap GATE:** the button changes to **HOLD** with an amber background. Each note remains held until the next effective trigger on the same lane. The previous note is released before the new note starts. Use this for a longer sample or sustained sound that should continue between hits.
-- **Tap HOLD:** the button returns to **GATE** and its normal dark appearance. The lane uses the GATE knob again. Switching modes releases the currently owned note; the new mode applies to subsequent triggers.
-
-For example, set lane A13 to HOLD to let a long sound continue across empty steps until A13 triggers again. A note played on another lane does not release A13. A rest or a trigger rejected by probability does not end the held note. The sample must still be long enough, and the target must respond appropriately to Note Off.
-
-The CONFIG button selects the **note-duration mode**; the PATTERN knob sets the **duration percentage used in GATE mode**. These are two different controls. Each lane can use a different mode, and the choices are saved with the Force project.
-
-
-### Release behaviour and target setup
-
-- Rests and probability-rejected triggers leave a held note playing.
-- Each audible ratchet retriggers; the final repeat remains held.
-- Stop, Mute, exclusion by Solo and switching GATE / HOLD release the owned note.
-- Note, channel, routing and playback-geometry changes use the engine's note-release safeguards.
-- The Gate percentage remains stored while HOLD is active, but does not set the held note's duration.
-
-HOLD cannot extend a sample beyond its natural end. The target must respond to Note Off and use a suitable envelope/release. A One Shot sample may ignore Note Off. Use distinct notes for independent lanes: two lanes sharing a note and channel are subject to overlap protection.
+HOLD suits long samples or sustained instruments, but cannot extend a finished sample. The target must respond to Note Off; One Shot may ignore it. Two lanes sharing a note/channel are subject to overlap protection.
 
 ## 9. Q-Links and automation
 
-On PATTERN in LINE mode, Q1–Q4 control line Velocity, Probability, Humanize and Gate. These four contextual controls are inactive in EDIT, where the dimmed LINE row remains visible as a reference. Q5–Q8 control Steps, Hits, Rotate and Division in LINE, or selected-step Velocity, Probability, Ratchet and Decay in EDIT.
+On PATTERN:
 
-TR pages expose lane selection, playback mode, rotation, shift and interval. CONFIG uses touch and the data wheel, without target or bank Q-Link assignments. A white focus border identifies the control operated by the data wheel.
+- LINE: Q1–Q4 = Velocity, Probability, Humanize, Gate; Q5–Q8 = Steps, Hits, Rotate, Division.
+- EDIT: Q1–Q4 inactive; Q5–Q8 = step Velocity, Probability, Ratchet, Decay.
 
-Canonical lane and step parameters are exposed separately for host automation. Contextual Q-Link aliases depend on the visible selection and are not advertised as automation targets. Step automation addresses stored source steps, which can move on screen under automatic rotation.
+MOD: Q1–Q4 = LFO 1 Depth, Offset, Phase, Threshold; Q5–Q8 = the same for LFO 2. MIX uses its separate knob.
 
-Q-Link automation inside the host is distinct from MIDI CC input. This plugin does not record or replay CC messages.
+The track pages expose lane selection and playback/rotation controls. CONFIG uses touch and the data wheel. A white focus outline identifies the wheel’s target.
+
+Automate canonical lane/step parameters; contextual aliases depend on selection. Existing lane automation still runs in EDIT. Step automation addresses stored source steps, which may move under rotation. Host automation is not MIDI CC input: the plugin does not record or replay CC.
 
 ## 10. Save and playback
 
-Save the Force project to store all sixteen patterns, step overrides, note assignments, GATE / HOLD choices and playback settings. The sequencer follows host tempo, position and loop boundaries. Stop releases its owned notes.
+Save the host project to retain patterns, step expression, note assignments, GATE/HOLD, playback settings and all four MOD slots. Held notes and live LFO phases are not saved. Stop releases owned notes.
 
-Probability is calculated once for a complete ratchet group and is deterministic for a given lane seed and musical position. A repeating host loop can therefore repeat the same probability decisions.
+Probability is deterministic for a lane seed and musical position; repeating a host loop can repeat its decisions.
 
-The plugin does not create native clips, control physical pad LEDs or synthesize audio. Scheduling has bounded event and loop budgets; see the engine documentation for the limits.
+The plugin does not create native clips, drive physical pad LEDs or produce audio. See the engine documentation for scheduling limits.
