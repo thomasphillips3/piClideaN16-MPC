@@ -4,9 +4,15 @@ Version 1.2.4
 
 ## 1. Overview
 
-Sixteen independent lanes generate MIDI notes for a Drum Track or drum instrument. The plugin produces no audio.
+πClideaN is a MIDI instrument: it produces no audio and drives a Drum Track or drum instrument.
 
-Five pages: PATTERN, MOD, 01 - 08, 09 - 16 and CONFIG. A01–A16 select a lane; its white outline stays visible during playback.
+This hybrid sequencer combines Euclidean pattern generation, step-by-step editing, parameter locks, selective randomization and probability. Auto-rotation, different playback directions and LFO modulation also let patterns and their triggers evolve.
+
+Each of its sixteen lanes has an independent pattern length and rhythmic division. Patterns can therefore loop for different durations while staying synchronized to the tempo, creating polymeters and evolving rhythmic offsets.
+
+Five pages: PATTERN, MOD, 01 - 08, 09 - 16 and CONFIG.
+
+A01–A16 select a pattern (lane). A white outline identifies the selected pattern.
 
 ## 2. Connect a target
 
