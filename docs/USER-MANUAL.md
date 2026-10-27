@@ -44,7 +44,9 @@ Use distinct notes for independent sounds, and avoid receiving the same output t
 
 ![PATTERN LINE — A03 selected](images/pattern-line-force-1.2.4.png)
 
-Choose **A01–A16**, then **LINE**. Build a rhythm and give the whole lane its character.
+Choose a pattern from **A01 to A16**, then **LINE**. 
+
+Build a rhythm and give the whole lane its character.
 
 ### Shape the rhythm
 
