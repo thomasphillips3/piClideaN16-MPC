@@ -35,7 +35,7 @@ result=subprocess.run(['docker','run','--rm','--platform','linux/arm64','-v',str
 if result.returncode:raise SystemExit(result.returncode)
 elf=B/'build/aarch64/piclidean_mpc.so';raw=elf.read_bytes()
 assert raw[:5]==b'\x7fELF\x02' and int.from_bytes(raw[18:20],'little')==183,'not an aarch64 ELF64'
-subprocess.run([os.environ.get('PICN_SKIN_PYTHON',sys.executable),str(B/'scripts/build_skin.py')],check=True,cwd=B)
+subprocess.run([os.environ.get('PICN_SKIN_PYTHON',sys.executable),str(B/'scripts/build_skin.py')],check=True,cwd=B,env=dict(os.environ,PICN_SKIN_MIN_IMAGE_AREA='6400'))
 report=(B/'build/reports/ELF-aarch64.txt').read_text()
 info={'version':VERSION,'architecture':'ELF64 aarch64','glibc_versions':sorted(set(re.findall(r'GLIBC_[0-9.]+',report))),'engine_sha256':hashlib.sha256(raw).hexdigest(),'hardware_access':False}
 assert source_inputs==inputs(),'Build inputs changed during compilation'

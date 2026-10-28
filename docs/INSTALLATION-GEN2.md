@@ -51,6 +51,6 @@ Project files and samples are separate from the plugin package.
 - For multiple instances, choose the corresponding numbered output port.
 - In HOLD, the target must respond to Note Off; One Shot playback may ignore it.
 
-## Known issues on Gen2
+## Gen2 skin note
 
-- On an MPC Live III, text and picture elements driven by changing values (step tiles, lane labels, the CONFIG PAD column, MOD slider labels) draw as black boxes. Controls and playback work.
+MPC Live III draws a non-button `Image` component as a blank box when its bitmap is smaller than about 5400 pixels in area. The Gen2 package therefore ships a skin whose small images are padded to at least 6400 pixels (MPC clips them to their bounds). This is done at build time with `PICN_SKIN_MIN_IMAGE_AREA`; the Gen1 skin is unchanged.
