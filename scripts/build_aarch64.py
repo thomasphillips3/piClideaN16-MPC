@@ -39,4 +39,8 @@ subprocess.run([os.environ.get('PICN_SKIN_PYTHON',sys.executable),str(B/'scripts
 report=(B/'build/reports/ELF-aarch64.txt').read_text()
 info={'version':VERSION,'architecture':'ELF64 aarch64','glibc_versions':sorted(set(re.findall(r'GLIBC_[0-9.]+',report))),'engine_sha256':hashlib.sha256(raw).hexdigest(),'hardware_access':False}
 assert source_inputs==inputs(),'Build inputs changed during compilation'
+skin_receipt=json.loads((B/'build/skin-receipt.json').read_text())
+assert skin_receipt['version']==VERSION and skin_receipt['inputs']==inputs(),'Skin inputs changed during build'
+assert skin_receipt['outputs']==tree(B/'build/skin'/FOLDER),'Skin output changed during build'
+info['input_hashes']=inputs();info['skin_output_hashes']=skin_receipt['outputs']
 (B/'build/reports/BUILD-aarch64.json').write_text(json.dumps(info,indent=2)+'\n');print('Built',elf,info)
